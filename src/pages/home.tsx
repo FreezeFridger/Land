@@ -34,12 +34,6 @@ const Home = () => {
     fontSize: '18px',
   };
 
-  const greetingStyle: React.CSSProperties = {
-    fontSize: '20px',
-    color: '#2563eb',
-    fontWeight: '600',
-    marginBottom: '12px'
-  };
 
   const headingStyle: React.CSSProperties = {
     fontSize: '52px',
@@ -49,12 +43,7 @@ const Home = () => {
     lineHeight: '1.2'
   };
 
-  const subheadingStyle: React.CSSProperties = {
-    fontSize: '22px',
-    color: '#64748b',
-    marginBottom: '32px',
-    lineHeight: '1.5'
-  };
+  
 
   const descriptionStyle: React.CSSProperties = {
     fontSize: '18px',
@@ -70,18 +59,7 @@ const Home = () => {
     flexWrap: 'wrap'
   };
 
-  const primaryButtonStyle: React.CSSProperties = {
-    padding: '14px 32px',
-    backgroundColor: '#2563eb',
-    color: 'white',
-    fontWeight: '600',
-    borderRadius: '8px',
-    border: 'none',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    fontSize: '16px',
-    boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.3)'
-  };
+  
 
   const secondaryButtonStyle: React.CSSProperties = {
     padding: '14px 32px',
@@ -101,7 +79,7 @@ const Home = () => {
     gap: '20px'
   };
 
-  const socialLinkStyle: React.CSSProperties = {
+  {/*const socialLinkStyle: React.CSSProperties = {
     width: '40px',
     height: '40px',
     borderRadius: '50%',
@@ -113,7 +91,7 @@ const Home = () => {
     textDecoration: 'none',
     transition: 'all 0.2s',
     fontSize: '20px'
-  };
+  };*/}
 
   // Mobile responsive styles
   const mobileBreakpoint = window.innerWidth <= 768;
@@ -160,9 +138,18 @@ const Home = () => {
           I plan on pivoting to machine learning after Part III.
 
         </p>
+
+        <p style={descriptionStyle}>
+
+          If you'd like to contact me, please write to: tj382 (at) cam.ac.uk
+
+        </p>
+
+
         
         {/* Call to Action Buttons */}
         <div style={buttonContainerStyle}>
+        <a href="./Teiva_Jabbour_CV.pdf" download="Teiva_Jabbour_CV.pdf">
           <button 
             style={secondaryButtonStyle}
             onMouseEnter={(e) => {
@@ -176,11 +163,12 @@ const Home = () => {
           >
             Download CV
           </button>
+          </a>
         </div>
 
         {/* Social Links */}
         <div style={socialLinksStyle}>
-          <a 
+          {/*<a 
             href="https://github.com" 
             style={socialLinkStyle}
             onMouseEnter={(e) => {
@@ -211,23 +199,8 @@ const Home = () => {
             }}
           >
             LI
-          </a>
-          <a 
-            href="mailto:your.email@example.com" 
-            style={socialLinkStyle}
-            onMouseEnter={(e) => {
-              (e.target as HTMLAnchorElement).style.backgroundColor = '#ea4335';
-              (e.target as HTMLAnchorElement).style.color = 'white';
-              (e.target as HTMLAnchorElement).style.transform = 'translateY(-3px)';
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLAnchorElement).style.backgroundColor = '#f1f5f9';
-              (e.target as HTMLAnchorElement).style.color = '#475569';
-              (e.target as HTMLAnchorElement).style.transform = 'translateY(0)';
-            }}
-          >
-            ✉
-          </a>
+          </a>*/}
+          
         </div>
       </div>
 

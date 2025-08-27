@@ -1,11 +1,12 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const navStyle: React.CSSProperties = {
     backgroundColor: '#f1f5f9',
     borderBottom: '1px solid #cbd5e1',
     position: 'sticky',
-    width: '100%',        // force full width
+    width: '100%',
     top: 0,
     zIndex: 50
   };
@@ -51,35 +52,35 @@ const Navbar = () => {
       <div style={containerStyle}>
         {/* Logo/Brand */}
         <div>
-          <a 
-            href="/" 
+          <Link 
+            to="/" 
             style={brandStyle}
-            onMouseEnter={(e) => (e.target as HTMLAnchorElement).style.color = '#2563eb'}
-            onMouseLeave={(e) => (e.target as HTMLAnchorElement).style.color = '#1e293b'}
+            onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#2563eb'}
+            onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#1e293b'}
           >
             Teiva Jabbour
-          </a>
+          </Link>
         </div>
 
         {/* Navigation Links */}
         <div style={navLinksStyle}>
-          <a
-            href="/"
+          <Link
+            to="/"
             style={linkStyle}
-            onMouseEnter={(e) => (e.target as HTMLAnchorElement).style.color = '#2563eb'}
-            onMouseLeave={(e) => (e.target as HTMLAnchorElement).style.color = '#475569'}
+            onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#2563eb'}
+            onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#475569'}
           >
             Home
-          </a>
+          </Link>
           <span style={separatorStyle}>•</span>
-          <a
-            href="/blog"
+          <Link
+            to="/blog"
             style={linkStyle}
-            onMouseEnter={(e) => (e.target as HTMLAnchorElement).style.color = '#2563eb'}
-            onMouseLeave={(e) => (e.target as HTMLAnchorElement).style.color = '#475569'}
+            onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#2563eb'}
+            onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#475569'}
           >
             Blog
-          </a>
+          </Link>
         </div>
       </div>
     </nav>
