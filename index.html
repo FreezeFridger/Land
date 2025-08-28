@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Teiva Jabbour</title>
 
-
     <!-- Google tag (gtag.js) --> <script async src="https://www.googletagmanager.com/gtag/js?id=G-DYRCX4WPPR"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-DYRCX4WPPR'); </script>
 
 
@@ -14,6 +13,19 @@
     <link rel="stylesheet" crossorigin href="/assets/index-geI3BWF1.css">
   </head>
   <body>
+
+    <script>
+      (function() {
+        const saved = localStorage.getItem('darkMode');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'true' || (saved === null && prefersDark)) {
+          document.body.classList.add('dark-mode');
+          document.body.style.backgroundColor = '#0f172a';
+        }
+      })();
+    </script>
+
+
     <div id="root"></div>
   </body>
 </html>
