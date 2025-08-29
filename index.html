@@ -14,16 +14,7 @@
   </head>
   <body>
 
-    <script>
-      (function() {
-        const saved = localStorage.getItem('darkMode');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (saved === 'true' || (saved === null && prefersDark)) {
-          document.body.classList.add('dark-mode');
-          document.body.style.backgroundColor = '#0f172a';
-        }
-      })();
-    </script>
+    
 
 
     <div id="root"></div>
