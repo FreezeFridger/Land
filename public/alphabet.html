@@ -356,16 +356,17 @@
     background: var(--gold);
     color: #3a2c00;
     font: 600 17px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    padding: 15px 36px;
+    padding: 14px 36px;
     cursor: pointer;
-    box-shadow: 0 4px 0 #c79422;
     touch-action: manipulation;
-    transition: transform 90ms ease, box-shadow 90ms ease;
+    transition: transform 90ms ease, filter 90ms ease;
   }
 
-  .cta.small { padding: 11px 18px; font-size: 15px; box-shadow: 0 3px 0 #c79422; }
+  .cta:hover { filter: brightness(1.06); }
 
-  .cta:active { transform: translateY(3px); box-shadow: 0 1px 0 #c79422; }
+  .cta.small { padding: 11px 18px; font-size: 15px; }
+
+  .cta:active { transform: scale(0.97); }
 
   .cta:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
 
