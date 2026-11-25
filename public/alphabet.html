@@ -381,7 +381,7 @@
         </form>
 
         <table class="board" id="board">
-          <caption>Leaderboard</caption>
+          <caption id="boardCaption">Leaderboard</caption>
           <thead>
             <tr><th class="num">#</th><th>Name</th><th class="num">Score</th><th class="num">Acc.</th></tr>
           </thead>
@@ -437,8 +437,47 @@
   var savedThisRun = false;
 
   // --- Leaderboard storage.
-  // Scores live in this browser's localStorage for now; swap these two
-  // functions for a hosted backend to make the board global.
+  // The shared board lives in Supabase; this browser's localStorage is
+  // the fallback when the service can't be reached. The publishable key
+  // below is meant to be public: it only allows what the database's row
+  // level security policies allow (read scores, add a score).
+  var SB_URL = "https://oojayxmgkhdnpjuhjfoo.supabase.co/rest/v1/alphabet_scores";
+  var SB_KEY = "sb_publishable_7SZ6Csdqh_WC3XpMJZQInw_jL41DfgT";
+
+  function sbHeaders(extra) {
+    var h = {
+      apikey: SB_KEY,
+      Authorization: "Bearer " + SB_KEY,
+      "Content-Type": "application/json"
+    };
+    for (var k in extra) h[k] = extra[k];
+    return h;
+  }
+
+  function fetchBoard() {
+    return fetch(SB_URL + "?select=id,name,score,accuracy&order=score.desc,accuracy.desc,created_at.asc&limit=" + BOARD_SIZE, {
+      headers: sbHeaders({})
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (rows) {
+      return rows.map(function (row) {
+        return { id: "sb-" + row.id, n: row.name, c: row.score, a: row.accuracy };
+      });
+    });
+  }
+
+  function submitScore(name) {
+    return fetch(SB_URL, {
+      method: "POST",
+      headers: sbHeaders({ Prefer: "return=representation" }),
+      body: JSON.stringify({ name: name, score: correct, accuracy: accuracy() })
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (rows) { return "sb-" + rows[0].id; });
+  }
+
   var memBoard = [];
 
   function loadBoard() {
@@ -579,7 +618,7 @@
     finalAccEl.textContent = (correct + wrong === 0) ? "—" : accuracy() + "%";
     newBestEl.hidden = !isNewBest;
     saveForm.hidden = false;
-    renderBoard(null);
+    showBoard(null);
 
     panelStart.hidden = true;
     panelOver.hidden = false;
@@ -588,8 +627,32 @@
     if (!isTouch) nameInput.focus();
   }
 
-  function renderBoard(highlightId) {
-    var rows = sortedBoard().slice(0, BOARD_SIZE);
+  var boardCaption = document.getElementById("boardCaption");
+
+  function showLoading() {
+    boardBody.textContent = "";
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.className = "empty";
+    td.colSpan = 4;
+    td.textContent = "Loading…";
+    tr.appendChild(td);
+    boardBody.appendChild(tr);
+  }
+
+  function showBoard(highlightId) {
+    boardCaption.textContent = "Leaderboard";
+    showLoading();
+    fetchBoard().then(function (rows) {
+      renderRows(rows, highlightId);
+    }).catch(function () {
+      boardCaption.textContent = "Leaderboard — offline, your scores only";
+      renderRows(sortedBoard(), highlightId);
+    });
+  }
+
+  function renderRows(rows, highlightId) {
+    rows = rows.slice(0, BOARD_SIZE);
     boardBody.textContent = "";
 
     if (rows.length === 0) {
@@ -633,23 +696,28 @@
   saveForm.addEventListener("submit", function (e) {
     e.preventDefault();
     if (savedThisRun) return;
+    savedThisRun = true;
     var name = nameInput.value.trim().slice(0, 12) || "Anonymous";
     try { localStorage.setItem("alpha-name", name); } catch (err) { /* fine */ }
-
-    var entry = {
-      id: Date.now() + "-" + Math.floor(Math.random() * 1e6),
-      n: name,
-      c: correct,
-      a: accuracy(),
-      t: Date.now()
-    };
-    memBoard.push(entry);
-    memBoard = sortedBoard().slice(0, BOARD_CAP);
-    persistBoard();
-
-    savedThisRun = true;
     saveForm.hidden = true;
-    renderBoard(entry.id);
+
+    submitScore(name).then(function (id) {
+      showBoard(id);
+    }).catch(function () {
+      // Couldn't reach the shared board: keep the score in this browser.
+      var entry = {
+        id: Date.now() + "-" + Math.floor(Math.random() * 1e6),
+        n: name,
+        c: correct,
+        a: accuracy(),
+        t: Date.now()
+      };
+      memBoard.push(entry);
+      memBoard = sortedBoard().slice(0, BOARD_CAP);
+      persistBoard();
+      boardCaption.textContent = "Leaderboard — offline, your scores only";
+      renderRows(sortedBoard(), entry.id);
+    });
   });
 
   function restartFromKey() {
