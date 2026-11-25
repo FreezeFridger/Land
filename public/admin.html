@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>alphabet · admin</title>
+<meta name="robots" content="noindex, nofollow">
+<title>admin</title>
 <style>
   :root {
     --bg: #16204a;
@@ -64,14 +64,9 @@
     padding: 28px;
   }
 
-  .login-card h1 { margin-bottom: 4px; }
-
-  .login-card p { color: var(--chrome); font-size: 14px; margin: 0 0 18px; }
-
-  .login-card label { display: block; font-size: 13px; color: var(--chrome); margin: 12px 0 4px; }
-
   .login-card input {
     width: 100%;
+    margin-bottom: 10px;
     padding: 10px 12px;
     border-radius: 10px;
     border: 1.5px solid var(--card-edge);
@@ -186,13 +181,9 @@
 <div id="tooltip"></div>
 
 <section id="loginView" class="login-card" hidden>
-  <h1>alphabet · admin</h1>
-  <p>Sign in with the Supabase admin account.</p>
   <form id="loginForm">
-    <label for="email">Email</label>
-    <input id="email" type="email" autocomplete="username" required>
-    <label for="pw">Password</label>
-    <input id="pw" type="password" autocomplete="current-password" required>
+    <input id="email" type="email" autocomplete="username" placeholder="Email" aria-label="Email" required>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required>
     <p class="login-err" id="loginErr"></p>
     <button type="submit">Sign in</button>
   </form>
