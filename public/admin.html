@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>alphabet · admin</title>
+<style>
+  :root {
+    --bg: #16204a;
+    --card: #1e2a5a;
+    --card-edge: #2a3660;
+    --paper: #f6f1e6;
+    --chrome: #aab3d6;
+    --faint: #7c86ad;
+    --gold: #ffc845;
+    --green: #34c77b;
+    --red: #f4604d;
+    --grid: #2a3660;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--paper);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  h1 { margin: 0; font-size: 20px; font-weight: 600; }
+
+  header .sub { color: var(--chrome); font-size: 14px; margin-right: auto; }
+
+  .ghost {
+    background: none;
+    border: 1px solid var(--card-edge);
+    color: var(--chrome);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font: 500 13px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    cursor: pointer;
+  }
+
+  .ghost:hover { color: var(--paper); border-color: var(--faint); }
+
+  /* ---- login ---- */
+  .login-card {
+    max-width: 360px;
+    margin: 12vh auto 0;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 14px;
+    padding: 28px;
+  }
+
+  .login-card h1 { margin-bottom: 4px; }
+
+  .login-card p { color: var(--chrome); font-size: 14px; margin: 0 0 18px; }
+
+  .login-card label { display: block; font-size: 13px; color: var(--chrome); margin: 12px 0 4px; }
+
+  .login-card input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--card-edge);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--paper);
+    font: 500 15px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    outline: none;
+  }
+
+  .login-card input:focus-visible { border-color: var(--gold); }
+
+  .login-card button[type=submit] {
+    margin-top: 18px;
+    width: 100%;
+    padding: 12px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--gold);
+    color: #3a2c00;
+    font: 600 15px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    cursor: pointer;
+  }
+
+  .login-err { color: var(--red); font-size: 13px; margin: 12px 0 0; min-height: 16px; }
+
+  /* ---- dashboard ---- */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+
+  .kpi b { display: block; font-size: 26px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+
+  .kpi span { font-size: 12px; color: var(--chrome); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 14px;
+    padding: 16px 18px 12px;
+    min-width: 0;
+  }
+
+  .chart-card.wide { grid-column: 1 / -1; }
+
+  .chart-card h2 { margin: 0; font-size: 15px; font-weight: 600; }
+
+  .chart-card .note { margin: 2px 0 12px; font-size: 12px; color: var(--chrome); }
+
+  .chart-card svg { display: block; width: 100%; height: auto; }
+
+  details { margin-top: 8px; }
+
+  summary { font-size: 12px; color: var(--faint); cursor: pointer; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    margin-top: 8px;
+  }
+
+  th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--chrome);
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--card-edge);
+  }
+
+  td { padding: 5px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+
+  th.num, td.num { text-align: right; }
+
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: #0e1534;
+    border: 1px solid var(--card-edge);
+    color: var(--paper);
+    font-size: 12px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    z-index: 10;
+    display: none;
+    white-space: nowrap;
+  }
+
+  .empty-note { color: var(--chrome); font-size: 13px; padding: 18px 0; }
+</style>
+</head>
+<body>
+<div id="tooltip"></div>
+
+<section id="loginView" class="login-card" hidden>
+  <h1>alphabet · admin</h1>
+  <p>Sign in with the Supabase admin account.</p>
+  <form id="loginForm">
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="pw">Password</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <p class="login-err" id="loginErr"></p>
+    <button type="submit">Sign in</button>
+  </form>
+</section>
+
+<main class="wrap" id="dashView" hidden>
+  <header>
+    <h1>alphabet</h1>
+    <span class="sub" id="asOf">game analytics</span>
+    <button class="ghost" id="refreshBtn">Refresh</button>
+    <button class="ghost" id="logoutBtn">Sign out</button>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid">
+    <div class="chart-card">
+      <h2>Hardest pairs</h2>
+      <p class="note">Share of sightings answered wrong or timed out · pairs seen 10+ times</p>
+      <div id="hardPairs"></div>
+    </div>
+    <div class="chart-card">
+      <h2>Slowest pairs</h2>
+      <p class="note">Average reaction on answered pairs · pairs seen 10+ times</p>
+      <div id="slowPairs"></div>
+    </div>
+    <div class="chart-card">
+      <h2>Position bias</h2>
+      <p class="note">Wrong rate by where the earlier letter appeared</p>
+      <div id="sideBias"></div>
+    </div>
+    <div class="chart-card">
+      <h2>Keyboard vs touch</h2>
+      <p class="note">Wrong rate and reaction time by input method</p>
+      <div id="methodStats"></div>
+    </div>
+    <div class="chart-card">
+      <h2>Errors through the run</h2>
+      <p class="note">Wrong rate by 5-second stretch of the 30-second clock</p>
+      <div id="errCurve"></div>
+    </div>
+    <div class="chart-card">
+      <h2>Speed through the run</h2>
+      <p class="note">Average reaction by 5-second stretch</p>
+      <div id="speedCurve"></div>
+    </div>
+    <div class="chart-card">
+      <h2>Runs per day</h2>
+      <p class="note">Finished 30-second runs</p>
+      <div id="daily"></div>
+    </div>
+    <div class="chart-card">
+      <h2>Score distribution</h2>
+      <p class="note">Finished runs by final score</p>
+      <div id="scoreDist"></div>
+    </div>
+    <div class="chart-card wide">
+      <h2>Recent runs</h2>
+      <p class="note">Latest finished runs · name shown when saved to the leaderboard</p>
+      <div id="recentRuns"></div>
+    </div>
+    <div class="chart-card wide">
+      <h2>Where players came from</h2>
+      <p class="note">Referrer on the run, (direct) when none</p>
+      <div id="referrers"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var SB = "https://oojayxmgkhdnpjuhjfoo.supabase.co";
+  var SB_KEY = "sb_publishable_7SZ6Csdqh_WC3XpMJZQInw_jL41DfgT";
+  var DEMO = /(\?|&)demo=1/.test(location.search);
+
+  var GOLD = "#ffc845";
+  var RED = "#f4604d";
+
+  var loginView = document.getElementById("loginView");
+  var dashView = document.getElementById("dashView");
+  var loginErr = document.getElementById("loginErr");
+  var tooltip = document.getElementById("tooltip");
+  var token = "";
+
+  try { token = sessionStorage.getItem("alpha-admin-token") || ""; } catch (e) { /* fine */ }
+
+  // ---------- auth ----------
+  function showLogin(msg) {
+    token = "";
+    try { sessionStorage.removeItem("alpha-admin-token"); } catch (e) { /* fine */ }
+    dashView.hidden = true;
+    loginView.hidden = false;
+    loginErr.textContent = msg || "";
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    loginErr.textContent = "";
+    fetch(SB + "/auth/v1/token?grant_type=password", {
+      method: "POST",
+      headers: { apikey: SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("pw").value
+      })
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok || !res.j.access_token) {
+          loginErr.textContent = res.j.error_description || res.j.msg || "Sign-in failed.";
+          return;
+        }
+        token = res.j.access_token;
+        try { sessionStorage.setItem("alpha-admin-token", token); } catch (e2) { /* fine */ }
+        openDash();
+      })
+      .catch(function () { loginErr.textContent = "Network error."; });
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", function () { showLogin(""); });
+  document.getElementById("refreshBtn").addEventListener("click", function () { loadAll(); });
+
+  // ---------- data ----------
+  function rpc(name, args) {
+    if (DEMO) return Promise.resolve(DEMO_DATA[name]);
+    return fetch(SB + "/rest/v1/rpc/" + name, {
+      method: "POST",
+      headers: {
+        apikey: SB_KEY,
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(args || {})
+    }).then(function (r) {
+      if (r.status === 401 || r.status === 403) { showLogin("Session expired — sign in again."); throw new Error("auth"); }
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
+  }
+
+  // ---------- tiny chart kit (single hue per chart; labels carry identity) ----------
+  var NS = "http://www.w3.org/2000/svg";
+
+  function sv(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+
+  function showTip(evt, html) {
+    tooltip.innerHTML = html;
+    tooltip.style.display = "block";
+    tooltip.style.left = Math.min(evt.clientX + 12, window.innerWidth - tooltip.offsetWidth - 8) + "px";
+    tooltip.style.top = (evt.clientY + 14) + "px";
+  }
+
+  function hideTip() { tooltip.style.display = "none"; }
+
+  function hover(node, html) {
+    node.addEventListener("mousemove", function (e) { showTip(e, html); });
+    node.addEventListener("mouseleave", hideTip);
+  }
+
+  // Horizontal bar: square at baseline, 4px rounded data end.
+  function hBarPath(x, y, w, h) {
+    var r = Math.min(4, w);
+    return "M" + x + " " + y +
+      " h" + (w - r) + " a" + r + " " + r + " 0 0 1 " + r + " " + r +
+      " v" + (h - 2 * r) + " a" + r + " " + r + " 0 0 1 -" + r + " " + r +
+      " h-" + (w - r) + " z";
+  }
+
+  // Column: square at baseline, 4px rounded cap.
+  function colPath(x, y, w, h) {
+    var r = Math.min(4, h, w / 2);
+    return "M" + x + " " + (y + h) +
+      " v-" + (h - r) + " a" + r + " " + r + " 0 0 1 " + r + " -" + r +
+      " h" + (w - 2 * r) + " a" + r + " " + r + " 0 0 1 " + r + " " + r +
+      " v" + (h - r) + " z";
+  }
+
+  function dataTable(container, headers, rows) {
+    var det = document.createElement("details");
+    var sum = document.createElement("summary");
+    sum.textContent = "View data";
+    det.appendChild(sum);
+    var tbl = document.createElement("table");
+    var tr = document.createElement("tr");
+    headers.forEach(function (h, i) {
+      var th = document.createElement("th");
+      th.textContent = h;
+      if (i > 0) th.className = "num";
+      tr.appendChild(th);
+    });
+    tbl.appendChild(tr);
+    rows.forEach(function (r) {
+      var tr2 = document.createElement("tr");
+      r.forEach(function (c, i) {
+        var td = document.createElement("td");
+        td.textContent = c;
+        if (i > 0) td.className = "num";
+        tr2.appendChild(td);
+      });
+      tbl.appendChild(tr2);
+    });
+    det.appendChild(tbl);
+    container.appendChild(det);
+  }
+
+  function emptyNote(container) {
+    var p = document.createElement("p");
+    p.className = "empty-note";
+    p.textContent = "No data yet.";
+    container.appendChild(p);
+  }
+
+  // Ranked horizontal bars: label | bar | value.
+  function rankedBars(container, rows, opt) {
+    container.textContent = "";
+    if (!rows.length) { emptyNote(container); return; }
+    var W = 460, LBL = opt.labelWidth || 64, VAL = 56;
+    var barH = 16, gap = 10, top = 4;
+    var H = top + rows.length * (barH + gap);
+    var svg = sv("svg", { viewBox: "0 0 " + W + " " + H, role: "img" }, container);
+    var max = opt.max || Math.max.apply(null, rows.map(function (r) { return r.v; })) || 1;
+    var span = W - LBL - VAL - 10;
+    rows.forEach(function (r, i) {
+      var y = top + i * (barH + gap);
+      var t = sv("text", { x: LBL - 8, y: y + barH - 4, "text-anchor": "end", fill: "var(--chrome)", "font-size": "12" }, svg);
+      t.textContent = r.label;
+      var w = Math.max(2, span * (r.v / max));
+      var bar = sv("path", { d: hBarPath(LBL, y, w, barH), fill: opt.color }, svg);
+      hover(bar, r.tip);
+      var v = sv("text", { x: LBL + w + 7, y: y + barH - 4, fill: "var(--paper)", "font-size": "12" }, svg);
+      v.textContent = r.fmt;
+    });
+    if (opt.table) dataTable(container, opt.table.headers, opt.table.rows);
+  }
+
+  // Columns with sparse x labels.
+  function columns(container, rows, opt) {
+    container.textContent = "";
+    if (!rows.length) { emptyNote(container); return; }
+    var W = 460, H = 180, padL = 30, padB = 22, padT = 12;
+    var svg = sv("svg", { viewBox: "0 0 " + W + " " + H, role: "img" }, container);
+    var max = Math.max.apply(null, rows.map(function (r) { return r.v; })) || 1;
+    var innerW = W - padL - 6, innerH = H - padT - padB;
+    // hairline grid: 3 lines
+    [0.5, 1].forEach(function (f) {
+      var gy = padT + innerH * (1 - f);
+      sv("line", { x1: padL, y1: gy, x2: W - 6, y2: gy, stroke: "var(--grid)", "stroke-width": "1" }, svg);
+      var gt = sv("text", { x: padL - 5, y: gy + 4, "text-anchor": "end", fill: "var(--faint)", "font-size": "10" }, svg);
+      gt.textContent = opt.axisFmt ? opt.axisFmt(max * f) : Math.round(max * f);
+    });
+    sv("line", { x1: padL, y1: padT + innerH, x2: W - 6, y2: padT + innerH, stroke: "var(--grid)", "stroke-width": "1" }, svg);
+    var slot = innerW / rows.length;
+    var barW = Math.min(24, Math.max(4, slot - 2));
+    var labelEvery = Math.ceil(rows.length / 8);
+    rows.forEach(function (r, i) {
+      var h = Math.max(2, innerH * (r.v / max));
+      var x = padL + i * slot + (slot - barW) / 2;
+      var bar = sv("path", { d: colPath(x, padT + innerH - h, barW, h), fill: opt.color }, svg);
+      hover(bar, r.tip);
+      if (i % labelEvery === 0) {
+        var t = sv("text", { x: x + barW / 2, y: H - 6, "text-anchor": "middle", fill: "var(--chrome)", "font-size": "10" }, svg);
+        t.textContent = r.label;
+      }
+    });
+    if (opt.table) dataTable(container, opt.table.headers, opt.table.rows);
+  }
+
+  // Line with ringed markers.
+  function lineChart(container, rows, opt) {
+    container.textContent = "";
+    if (!rows.length) { emptyNote(container); return; }
+    var W = 460, H = 180, padL = 36, padB = 22, padT = 12, padR = 26;
+    var svg = sv("svg", { viewBox: "0 0 " + W + " " + H, role: "img" }, container);
+    var max = Math.max.apply(null, rows.map(function (r) { return r.v; })) || 1;
+    var innerW = W - padL - padR, innerH = H - padT - padB;
+    [0.5, 1].forEach(function (f) {
+      var gy = padT + innerH * (1 - f);
+      sv("line", { x1: padL, y1: gy, x2: W - padR, y2: gy, stroke: "var(--grid)", "stroke-width": "1" }, svg);
+      var gt = sv("text", { x: padL - 5, y: gy + 4, "text-anchor": "end", fill: "var(--faint)", "font-size": "10" }, svg);
+      gt.textContent = opt.axisFmt ? opt.axisFmt(max * f) : Math.round(max * f);
+    });
+    sv("line", { x1: padL, y1: padT + innerH, x2: W - padR, y2: padT + innerH, stroke: "var(--grid)", "stroke-width": "1" }, svg);
+    var pts = rows.map(function (r, i) {
+      return {
+        x: padL + (rows.length === 1 ? innerW / 2 : innerW * (i / (rows.length - 1))),
+        y: padT + innerH * (1 - r.v / max),
+        r: r
+      };
+    });
+    sv("path", {
+      d: pts.map(function (p, i) { return (i ? "L" : "M") + p.x + " " + p.y; }).join(" "),
+      fill: "none", stroke: opt.color, "stroke-width": "2",
+      "stroke-linejoin": "round", "stroke-linecap": "round"
+    }, svg);
+    pts.forEach(function (p) {
+      sv("circle", { cx: p.x, cy: p.y, r: 6, fill: "var(--card)" }, svg); // 2px surface ring
+      var dot = sv("circle", { cx: p.x, cy: p.y, r: 4, fill: opt.color }, svg);
+      hover(dot, p.r.tip);
+      var t = sv("text", { x: p.x, y: H - 6, "text-anchor": "middle", fill: "var(--chrome)", "font-size": "10" }, svg);
+      t.textContent = p.r.label;
+    });
+    if (opt.table) dataTable(container, opt.table.headers, opt.table.rows);
+  }
+
+  function plainTable(container, headers, rows) {
+    container.textContent = "";
+    if (!rows.length) { emptyNote(container); return; }
+    var tbl = document.createElement("table");
+    var tr = document.createElement("tr");
+    headers.forEach(function (h, i) {
+      var th = document.createElement("th");
+      th.textContent = h;
+      if (i > 0) th.className = "num";
+      tr.appendChild(th);
+    });
+    tbl.appendChild(tr);
+    rows.forEach(function (r) {
+      var tr2 = document.createElement("tr");
+      r.forEach(function (c, i) {
+        var td = document.createElement("td");
+        td.textContent = c;
+        if (i > 0) td.className = "num";
+        tr2.appendChild(td);
+      });
+      tbl.appendChild(tr2);
+    });
+    container.appendChild(tbl);
+  }
+
+  // ---------- renderers ----------
+  function renderKpis(o) {
+    var defs = [
+      [o.runs, "runs"], [o.answers, "answers"], [o.devices, "players"],
+      [o.avg_score, "avg score"], [o.best_score, "best score"],
+      [o.avg_accuracy + "%", "avg accuracy"], [o.touch_pct + "%", "on touch"]
+    ];
+    var host = document.getElementById("kpis");
+    host.textContent = "";
+    defs.forEach(function (d) {
+      var div = document.createElement("div");
+      div.className = "kpi";
+      var b = document.createElement("b");
+      b.textContent = d[0] === null || d[0] === undefined ? "–" : d[0];
+      var s = document.createElement("span");
+      s.textContent = d[1];
+      div.appendChild(b);
+      div.appendChild(s);
+      host.appendChild(div);
+    });
+  }
+
+  function renderPairs(rows) {
+    var hard = rows.slice(0, 10);
+    rankedBars(document.getElementById("hardPairs"), hard.map(function (p) {
+      return { label: p.pair[0] + " · " + p.pair[1], v: p.wrong_pct, fmt: p.wrong_pct + "%", tip: p.pair[0] + "/" + p.pair[1] + " — wrong " + p.wrong_pct + "% of " + p.n + " sightings" };
+    }), { color: RED, max: 100, table: { headers: ["Pair", "Seen", "Wrong %", "Avg ms"], rows: rows.map(function (p) { return [p.pair, p.n, p.wrong_pct, p.avg_ms]; }) } });
+
+    var slow = rows.slice().sort(function (a, b) { return b.avg_ms - a.avg_ms; }).slice(0, 10);
+    rankedBars(document.getElementById("slowPairs"), slow.map(function (p) {
+      return { label: p.pair[0] + " · " + p.pair[1], v: p.avg_ms, fmt: p.avg_ms + " ms", tip: p.pair[0] + "/" + p.pair[1] + " — avg " + p.avg_ms + " ms over " + p.n + " sightings" };
+    }), { color: GOLD });
+  }
+
+  function renderSideBias(rows) {
+    rankedBars(document.getElementById("sideBias"), rows.map(function (r) {
+      return {
+        label: r.first_side === "left" ? "on left" : "on right",
+        v: r.wrong_pct, fmt: r.wrong_pct + "%",
+        tip: "Earlier letter on the " + r.first_side + " — wrong " + r.wrong_pct + "% of " + r.n + " · avg " + r.avg_ms + " ms"
+      };
+    }), { color: RED, max: 100, labelWidth: 76, table: { headers: ["Earlier letter", "N", "Wrong %", "Avg ms"], rows: rows.map(function (r) { return [r.first_side, r.n, r.wrong_pct, r.avg_ms]; }) } });
+  }
+
+  function renderMethods(rows) {
+    var host = document.getElementById("methodStats");
+    host.textContent = "";
+    if (!rows.length) { emptyNote(host); return; }
+    var wrongDiv = document.createElement("div");
+    var speedDiv = document.createElement("div");
+    host.appendChild(wrongDiv);
+    host.appendChild(speedDiv);
+    rankedBars(wrongDiv, rows.map(function (r) {
+      return { label: r.method, v: r.wrong_pct, fmt: r.wrong_pct + "% wrong", tip: r.method + " — wrong " + r.wrong_pct + "% of " + r.n };
+    }), { color: RED, max: 100, labelWidth: 52 });
+    rankedBars(speedDiv, rows.map(function (r) {
+      return { label: r.method, v: r.avg_ms, fmt: r.avg_ms + " ms", tip: r.method + " — avg " + r.avg_ms + " ms" };
+    }), { color: GOLD, labelWidth: 52, table: { headers: ["Method", "N", "Wrong %", "Avg ms"], rows: rows.map(function (r) { return [r.method, r.n, r.wrong_pct, r.avg_ms]; }) } });
+  }
+
+  function renderCurves(rows) {
+    var labels = ["0–5s", "5–10s", "10–15s", "15–20s", "20–25s", "25–30s"];
+    lineChart(document.getElementById("errCurve"), rows.map(function (r) {
+      return { label: labels[r.bucket] || r.bucket, v: r.wrong_pct, tip: (labels[r.bucket] || r.bucket) + " — wrong " + r.wrong_pct + "% of " + r.n, };
+    }), { color: RED, axisFmt: function (v) { return Math.round(v) + "%"; }, table: { headers: ["Stretch", "N", "Wrong %", "Avg ms"], rows: rows.map(function (r) { return [labels[r.bucket] || r.bucket, r.n, r.wrong_pct, r.avg_ms]; }) } });
+    lineChart(document.getElementById("speedCurve"), rows.map(function (r) {
+      return { label: labels[r.bucket] || r.bucket, v: r.avg_ms, tip: (labels[r.bucket] || r.bucket) + " — avg " + r.avg_ms + " ms" };
+    }), { color: GOLD, axisFmt: function (v) { return Math.round(v); } });
+  }
+
+  function renderDaily(rows) {
+    columns(document.getElementById("daily"), rows.map(function (r) {
+      return { label: r.d.slice(5), v: r.runs, tip: r.d + " — " + r.runs + " runs" };
+    }), { color: GOLD, table: { headers: ["Day", "Runs"], rows: rows.map(function (r) { return [r.d, r.runs]; }) } });
+  }
+
+  function renderScores(rows) {
+    columns(document.getElementById("scoreDist"), rows.map(function (r) {
+      return { label: String(r.score), v: r.n, tip: "Score " + r.score + " — " + r.n + " runs" };
+    }), { color: GOLD, table: { headers: ["Score", "Runs"], rows: rows.map(function (r) { return [r.score, r.n]; }) } });
+  }
+
+  function renderRecent(rows) {
+    plainTable(document.getElementById("recentRuns"),
+      ["When", "Name", "Score", "Right", "Wrong", "Acc.", "Input"],
+      rows.map(function (r) {
+        return [new Date(r.at).toLocaleString(), r.name || "—", r.score, r.right_count, r.wrong_count, r.accuracy + "%", r.is_touch ? "touch" : "keys"];
+      }));
+  }
+
+  function renderReferrers(rows) {
+    plainTable(document.getElementById("referrers"),
+      ["Referrer", "Runs"],
+      rows.map(function (r) { return [r.referrer || "(direct)", r.runs]; }));
+  }
+
+  // ---------- load ----------
+  function loadAll() {
+    document.getElementById("asOf").textContent = "loading…";
+    Promise.all([
+      rpc("admin_overview"),
+      rpc("admin_pair_stats", { min_n: 10 }),
+      rpc("admin_side_bias"),
+      rpc("admin_method_stats"),
+      rpc("admin_time_curve"),
+      rpc("admin_daily"),
+      rpc("admin_score_dist"),
+      rpc("admin_recent_runs", { lim: 25 }),
+      rpc("admin_referrers")
+    ]).then(function (r) {
+      renderKpis(r[0] || {});
+      renderPairs(r[1] || []);
+      renderSideBias(r[2] || []);
+      renderMethods(r[3] || []);
+      renderCurves(r[4] || []);
+      renderDaily(r[5] || []);
+      renderScores(r[6] || []);
+      renderRecent(r[7] || []);
+      renderReferrers(r[8] || []);
+      document.getElementById("asOf").textContent = "as of " + new Date().toLocaleTimeString();
+    }).catch(function (err) {
+      if (String(err && err.message) !== "auth") {
+        document.getElementById("asOf").textContent = "load failed — check that the admin SQL ran";
+      }
+    });
+  }
+
+  function openDash() {
+    loginView.hidden = true;
+    dashView.hidden = false;
+    loadAll();
+  }
+
+  // ---------- demo data (layout preview: /admin.html?demo=1) ----------
+  var DEMO_DATA = {
+    admin_overview: { runs: 212, answers: 4120, devices: 97, avg_score: 9.4, best_score: 24, avg_accuracy: 78.2, touch_pct: 41 },
+    admin_pair_stats: [
+      { pair: "MN", n: 44, wrong_pct: 48.1, avg_ms: 1480 }, { pair: "PQ", n: 39, wrong_pct: 44.0, avg_ms: 1395 },
+      { pair: "UV", n: 51, wrong_pct: 41.2, avg_ms: 1350 }, { pair: "JK", n: 36, wrong_pct: 38.9, avg_ms: 1288 },
+      { pair: "GH", n: 48, wrong_pct: 33.3, avg_ms: 1216 }, { pair: "RS", n: 42, wrong_pct: 28.6, avg_ms: 1150 },
+      { pair: "CD", n: 55, wrong_pct: 18.2, avg_ms: 905 }, { pair: "EK", n: 40, wrong_pct: 12.5, avg_ms: 840 },
+      { pair: "BT", n: 37, wrong_pct: 8.1, avg_ms: 700 }, { pair: "AO", n: 45, wrong_pct: 6.7, avg_ms: 650 }
+    ],
+    admin_side_bias: [
+      { first_side: "left", n: 2060, wrong_pct: 19.4, avg_ms: 1010 },
+      { first_side: "right", n: 2060, wrong_pct: 26.8, avg_ms: 1135 }
+    ],
+    admin_method_stats: [
+      { method: "key", n: 2480, wrong_pct: 20.1, avg_ms: 980 },
+      { method: "tap", n: 1390, wrong_pct: 27.5, avg_ms: 1190 }
+    ],
+    admin_time_curve: [
+      { bucket: 0, n: 700, wrong_pct: 18.5, avg_ms: 1120 }, { bucket: 1, n: 690, wrong_pct: 20.1, avg_ms: 1060 },
+      { bucket: 2, n: 688, wrong_pct: 22.3, avg_ms: 1035 }, { bucket: 3, n: 680, wrong_pct: 24.8, avg_ms: 1010 },
+      { bucket: 4, n: 678, wrong_pct: 27.9, avg_ms: 990 }, { bucket: 5, n: 684, wrong_pct: 31.4, avg_ms: 965 }
+    ],
+    admin_daily: [
+      { d: "2026-11-19", runs: 8 }, { d: "2026-11-20", runs: 12 }, { d: "2026-11-21", runs: 9 },
+      { d: "2026-11-22", runs: 14 }, { d: "2026-11-23", runs: 11 }, { d: "2026-11-24", runs: 96 }, { d: "2026-11-25", runs: 62 }
+    ],
+    admin_score_dist: [
+      { score: -2, n: 3 }, { score: 0, n: 9 }, { score: 2, n: 14 }, { score: 4, n: 18 }, { score: 6, n: 25 },
+      { score: 8, n: 31 }, { score: 10, n: 28 }, { score: 12, n: 24 }, { score: 14, n: 20 }, { score: 16, n: 14 },
+      { score: 18, n: 10 }, { score: 20, n: 7 }, { score: 22, n: 4 }, { score: 24, n: 2 }
+    ],
+    admin_recent_runs: [
+      { at: "2026-11-25T10:44:00Z", name: "Teiva", score: 17, right_count: 19, wrong_count: 2, accuracy: 90, is_touch: false },
+      { at: "2026-11-25T10:31:00Z", name: null, score: 6, right_count: 10, wrong_count: 4, accuracy: 71, is_touch: true },
+      { at: "2026-11-25T10:12:00Z", name: "Kim", score: 12, right_count: 15, wrong_count: 3, accuracy: 83, is_touch: true }
+    ],
+    admin_referrers: [
+      { referrer: "https://t.co/", runs: 141 }, { referrer: null, runs: 58 }, { referrer: "https://teiva.io/", runs: 13 }
+    ]
+  };
+
+  // ---------- boot ----------
+  if (DEMO) {
+    openDash();
+  } else if (token) {
+    openDash(); // a stale token falls back to login via the 401 handler
+  } else {
+    showLogin("");
+  }
+})();
+</script>
+</body>
+</html>
