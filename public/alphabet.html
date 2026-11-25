@@ -86,6 +86,22 @@
   .hud .ok { color: var(--green); font-weight: 600; }
   .hud .miss { color: var(--red); font-weight: 600; }
 
+  .mute {
+    appearance: none;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    line-height: 1;
+    opacity: 0.85;
+  }
+
+  .mute:focus-visible {
+    outline: 2px solid var(--gold);
+    border-radius: 6px;
+  }
+
   .timer {
     height: 5px;
     border-radius: 3px;
@@ -364,9 +380,10 @@
   <header>
     <h1>Which comes first?</h1>
     <div class="hud">
-      <span class="clock" id="clock">1:00</span>
+      <span class="clock" id="clock">0:30</span>
       <span><span class="ok" id="okCount">0</span> right</span>
       <span><span class="miss" id="missCount">0</span> wrong</span>
+      <button class="mute" id="muteBtn" aria-label="Mute sound" title="Mute sound (M)">🔊</button>
     </div>
   </header>
 
@@ -387,7 +404,7 @@
 
     <div class="overlay" id="overlay">
       <div class="panel" id="panelStart">
-        <h2>One minute.<br>Two seconds a pair.</h2>
+        <h2>Thirty seconds.<br>Two seconds a pair.</h2>
         <p class="lede">Pick the letter that comes earlier in the alphabet. Tap a tile, or press <kbd>Q</kbd> for left and <kbd>E</kbd> for right. Too slow on a pair counts as wrong.</p>
         <button class="cta" id="startBtn">Start</button>
       </div>
@@ -428,7 +445,7 @@
 (function () {
   "use strict";
 
-  var RUN_MS = 60000;
+  var RUN_MS = 30000;
   var Q_MS = 2000;
   var BOARD_SIZE = 8;
   var BOARD_CAP = 50;
@@ -553,6 +570,50 @@
     try { window.plausible(name, props ? { props: props } : undefined); } catch (e) { /* analytics must never break the game */ }
   }
 
+  // --- Sound: tiny WebAudio blips; a blocked or failed context never breaks play.
+  var muteBtn = document.getElementById("muteBtn");
+  var audioCtx = null;
+  var muted = false;
+  try { muted = localStorage.getItem("alpha-muted") === "1"; } catch (e) { /* default on */ }
+
+  function renderMute() {
+    muteBtn.textContent = muted ? "🔇" : "🔊";
+    var label = (muted ? "Unmute" : "Mute") + " sound (M)";
+    muteBtn.setAttribute("aria-label", label);
+    muteBtn.title = label;
+  }
+
+  function toggleMute() {
+    muted = !muted;
+    try { localStorage.setItem("alpha-muted", muted ? "1" : "0"); } catch (e) { /* in-memory only */ }
+    renderMute();
+  }
+
+  function beep(freq, dur, type, vol) {
+    if (muted) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      var t = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + dur);
+    } catch (e) { /* no sound is fine */ }
+  }
+
+  function playGood() { beep(880, 0.08, "sine", 0.15); }
+  function playBad() { beep(170, 0.15, "square", 0.12); }
+
+  muteBtn.addEventListener("click", function () { toggleMute(); muteBtn.blur(); });
+  renderMute();
+
   function letter(i) { return String.fromCharCode(65 + i); }
 
   function accuracy() {
@@ -609,7 +670,7 @@
       return;
     }
     fill.style.transform = "scaleX(" + (left / RUN_MS) + ")";
-    fill.style.background = "hsl(" + Math.round(Math.min(1, left / 15000) * 42) + ", 92%, 62%)";
+    fill.style.background = "hsl(" + Math.round(Math.min(1, left / 10000) * 42) + ", 92%, 62%)";
     clockEl.textContent = formatClock(left);
 
     var qLeft = qDeadline - now;
@@ -624,6 +685,7 @@
   function qTimeout() {
     wrong += 1;
     missEl.textContent = wrong;
+    playBad();
     setDots("bad", "bad");
     nextPair();
   }
@@ -659,9 +721,11 @@
     if (hit) {
       correct += 1;
       okEl.textContent = correct;
+      playGood();
     } else {
       wrong += 1;
       missEl.textContent = wrong;
+      playBad();
     }
     var cls = hit ? "good" : "bad";
     setDots(side === "left" ? cls : "", side === "right" ? cls : "");
@@ -803,6 +867,7 @@
     if (e.repeat) return;
     if (e.target === nameInput) return; // typing a name, not playing
     var k = e.key.toLowerCase();
+    if (k === "m") { toggleMute(); return; }
     if (state === "playing") {
       if (k === "q") choose("left");
       else if (k === "e") choose("right");
