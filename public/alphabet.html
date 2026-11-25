@@ -320,6 +320,12 @@
 
   .save-row input::placeholder { color: var(--chrome); opacity: 0.7; }
 
+  .save-note {
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: var(--red);
+  }
+
   .board {
     margin: 20px auto 0;
     width: 100%;
@@ -464,6 +470,7 @@
           <input id="nameInput" maxlength="12" placeholder="Your name" autocomplete="off" enterkeyhint="done">
           <button class="cta small" type="submit">Save score</button>
         </form>
+        <p class="save-note" id="saveNote" hidden>That name's not going on the board &mdash; try another.</p>
 
         <table class="board" id="board">
           <caption id="boardCaption">Leaderboard</caption>
@@ -521,6 +528,7 @@
   var newBestEl = document.getElementById("newBest");
   var saveForm = document.getElementById("saveForm");
   var nameInput = document.getElementById("nameInput");
+  var saveNote = document.getElementById("saveNote");
   var boardBody = document.getElementById("boardBody");
   var startBtn = document.getElementById("startBtn");
   var boardBtn = document.getElementById("boardBtn");
@@ -591,17 +599,29 @@
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
     }).then(function (rows) {
-      // One slot per device: rows arrive best-first, keep each device's first.
-      var seen = {};
-      var out = [];
+      // One slot per device: rows arrive best-first. The score comes from
+      // the device's best row; the displayed name from its newest row, so
+      // renaming takes effect without having to beat your own best.
+      var best = {};
+      var latest = {};
+      var order = [];
       for (var i = 0; i < rows.length; i++) {
         var row = rows[i];
         var key = row.device_id || "row-" + row.id;
-        if (seen[key]) continue;
-        seen[key] = true;
-        out.push({ id: "sb-" + row.id, n: row.name, c: row.score, a: row.accuracy });
+        if (!best[key]) {
+          best[key] = row;
+          order.push(key);
+        }
+        if (!latest[key] || row.id > latest[key].id) latest[key] = row;
       }
-      return out;
+      return order.map(function (key) {
+        return {
+          id: "sb-" + best[key].id,
+          n: latest[key].name,
+          c: best[key].score,
+          a: best[key].accuracy
+        };
+      });
     });
   }
 
@@ -867,6 +887,7 @@
     finalWrongEl.textContent = wrong;
     finalAccEl.textContent = (correct + wrong === 0) ? "—" : accuracy() + "%";
     newBestEl.hidden = !isNewBest;
+    saveNote.hidden = true;
     saveForm.hidden = false;
     panelOver.classList.remove("browse");
     overTitleEl.textContent = "Time's up";
@@ -946,11 +967,35 @@
     });
   }
 
+  // Light profanity screen on names shown on the public board. Normalizes
+  // common letter swaps first; a determined troll can still get past it.
+  var BAD_WORDS = ["fuck", "shit", "cunt", "bitch", "dick", "cock", "pussy",
+    "whore", "slut", "nigg", "fag", "rape", "hitler", "nazi", "kike",
+    "spic", "chink"];
+
+  function nameBlocked(name) {
+    var base = name.toLowerCase()
+      .replace(/@/g, "a").replace(/[$5]/g, "s").replace(/0/g, "o")
+      .replace(/3/g, "e").replace(/4/g, "a").replace(/7/g, "t");
+    // "1" (and friends) can stand in for i or l, so check both readings.
+    var asI = base.replace(/[1!|]/g, "i").replace(/[^a-z]/g, "");
+    var asL = base.replace(/[1!|]/g, "l").replace(/[^a-z]/g, "");
+    for (var i = 0; i < BAD_WORDS.length; i++) {
+      if (asI.indexOf(BAD_WORDS[i]) !== -1 || asL.indexOf(BAD_WORDS[i]) !== -1) return true;
+    }
+    return false;
+  }
+
   saveForm.addEventListener("submit", function (e) {
     e.preventDefault();
     if (savedThisRun) return;
-    savedThisRun = true;
     var name = nameInput.value.trim().slice(0, 12) || "Anonymous";
+    if (nameBlocked(name)) {
+      saveNote.hidden = false;
+      return;
+    }
+    saveNote.hidden = true;
+    savedThisRun = true;
     try { localStorage.setItem("alpha-name", name); } catch (err) { /* fine */ }
     saveForm.hidden = true;
 
