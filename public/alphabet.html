@@ -60,20 +60,24 @@
     color: var(--paper);
   }
 
-  .scores {
+  .hud {
     display: flex;
+    align-items: baseline;
     gap: 14px;
-    font-size: 14px;
+    font-size: 15px;
     color: var(--chrome);
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
 
-  .scores b {
+  .hud .clock {
     color: var(--gold);
-    font-size: 16px;
-    font-variant-numeric: tabular-nums;
-    margin-left: 4px;
+    font-size: 20px;
+    font-weight: 600;
   }
+
+  .hud .ok { color: var(--green); font-weight: 600; }
+  .hud .miss { color: var(--red); font-weight: 600; }
 
   .timer {
     height: 8px;
@@ -166,35 +170,42 @@
     position: absolute;
     inset: 0;
     border-radius: 22px;
-    background: rgba(22, 32, 74, 0.82);
+    background: rgba(22, 32, 74, 0.88);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
     justify-content: center;
-    text-align: center;
-    padding: 24px;
+    padding: 18px;
   }
 
   .overlay[hidden] { display: none; }
 
+  .panel {
+    width: 100%;
+    max-width: 380px;
+    max-height: 100%;
+    overflow-y: auto;
+    text-align: center;
+  }
+
   .panel h2 {
     margin: 0 0 10px;
     font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(1.8rem, 7vmin, 2.6rem);
+    font-size: clamp(1.7rem, 6.5vmin, 2.4rem);
     font-weight: 700;
     color: var(--paper);
   }
 
-  .panel p {
-    margin: 0 auto 24px;
+  .panel .lede {
+    margin: 0 auto 22px;
     max-width: 34ch;
     font-size: 16px;
     line-height: 1.5;
     color: var(--chrome);
   }
 
-  .panel p kbd {
+  .panel .lede kbd {
     font-family: inherit;
     font-size: 13px;
     font-weight: 600;
@@ -204,26 +215,92 @@
     padding: 1px 7px;
   }
 
-  .final {
-    font-size: 17px;
-    color: var(--paper);
-    margin: 0 0 6px;
+  .result {
+    margin: 0 0 4px;
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
   }
 
-  .final b {
-    color: var(--gold);
-    font-size: 34px;
-    font-variant-numeric: tabular-nums;
+  .result small {
     display: block;
-    margin-top: 2px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--chrome);
+    margin-top: 4px;
   }
 
   .new-best {
     color: var(--gold);
     font-weight: 600;
     font-size: 15px;
-    margin: 0 0 18px;
+    margin: 8px 0 0;
   }
+
+  .save-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin: 18px 0 0;
+  }
+
+  .save-row input {
+    width: 150px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--paper);
+    font: 500 15px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    outline: none;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  .save-row input:focus-visible { border-color: var(--gold); }
+
+  .save-row input::placeholder { color: var(--chrome); opacity: 0.7; }
+
+  .board {
+    margin: 20px auto 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .board caption {
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--chrome);
+    padding-bottom: 6px;
+  }
+
+  .board th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--chrome);
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .board td {
+    padding: 6px;
+    text-align: left;
+    color: var(--paper);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .board th.num, .board td.num { text-align: right; }
+
+  .board td.rank { color: var(--chrome); width: 28px; }
+
+  .board tr.me td { color: var(--gold); font-weight: 600; }
+
+  .board .empty { color: var(--chrome); padding: 10px 6px; }
 
   .cta {
     appearance: none;
@@ -239,12 +316,16 @@
     transition: transform 90ms ease, box-shadow 90ms ease;
   }
 
+  .cta.small { padding: 11px 18px; font-size: 15px; box-shadow: 0 3px 0 #c79422; }
+
   .cta:active { transform: translateY(3px); box-shadow: 0 1px 0 #c79422; }
 
   .cta:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
 
+  .again { margin-top: 22px; }
+
   .hint {
-    margin: 14px 0 0;
+    margin: 12px 0 0;
     font-size: 13px;
     color: var(--chrome);
   }
@@ -259,9 +340,10 @@
 <main class="wrap">
   <header>
     <h1>Which comes first?</h1>
-    <div class="scores">
-      <span>Score<b id="score">0</b></span>
-      <span>Best<b id="best">0</b></span>
+    <div class="hud">
+      <span class="clock" id="clock">1:00</span>
+      <span><span class="ok" id="okCount">0</span> right</span>
+      <span><span class="miss" id="missCount">0</span> wrong</span>
     </div>
   </header>
 
@@ -281,16 +363,32 @@
 
     <div class="overlay" id="overlay">
       <div class="panel" id="panelStart">
-        <h2>Two letters.<br>Three seconds.</h2>
-        <p>Pick the one that comes earlier in the alphabet. Tap a tile, or press <kbd>Q</kbd> for left and <kbd>E</kbd> for right.</p>
+        <h2>One minute.<br>As many as you can.</h2>
+        <p class="lede">Pick the letter that comes earlier in the alphabet. Tap a tile, or press <kbd>Q</kbd> for left and <kbd>E</kbd> for right. Wrong picks drag your accuracy down.</p>
         <button class="cta" id="startBtn">Start</button>
       </div>
+
       <div class="panel" id="panelOver" hidden>
-        <h2 id="overTitle">Time's up</h2>
-        <p id="fact"></p>
-        <p class="final">You got <b id="finalScore">0</b></p>
-        <p class="new-best" id="newBest" hidden>New best!</p>
-        <button class="cta" id="againBtn">Play again</button>
+        <h2>Time's up</h2>
+        <p class="result"><span id="finalCorrect">0</span> correct
+          <small><span id="finalAcc">0%</span> accuracy &middot; <span id="finalWrong">0</span> wrong</small>
+        </p>
+        <p class="new-best" id="newBest" hidden>New personal best!</p>
+
+        <form class="save-row" id="saveForm">
+          <input id="nameInput" maxlength="12" placeholder="Your name" autocomplete="off" enterkeyhint="done">
+          <button class="cta small" type="submit">Save score</button>
+        </form>
+
+        <table class="board" id="board">
+          <caption>Leaderboard</caption>
+          <thead>
+            <tr><th class="num">#</th><th>Name</th><th class="num">Score</th><th class="num">Acc.</th></tr>
+          </thead>
+          <tbody id="boardBody"></tbody>
+        </table>
+
+        <button class="cta again" id="againBtn">Play again</button>
         <p class="hint" id="againHint">or press Q / E</p>
       </div>
     </div>
@@ -301,33 +399,65 @@
 (function () {
   "use strict";
 
-  var ROUND_MS = 3000;
+  var RUN_MS = 60000;
+  var BOARD_SIZE = 8;
+  var BOARD_CAP = 50;
 
   var tileL = document.getElementById("tileLeft");
   var tileR = document.getElementById("tileRight");
   var letL = document.getElementById("letterLeft");
   var letR = document.getElementById("letterRight");
-  var scoreEl = document.getElementById("score");
-  var bestEl = document.getElementById("best");
+  var clockEl = document.getElementById("clock");
+  var okEl = document.getElementById("okCount");
+  var missEl = document.getElementById("missCount");
   var fill = document.getElementById("timerFill");
   var overlay = document.getElementById("overlay");
   var panelStart = document.getElementById("panelStart");
   var panelOver = document.getElementById("panelOver");
-  var overTitle = document.getElementById("overTitle");
-  var factEl = document.getElementById("fact");
-  var finalScoreEl = document.getElementById("finalScore");
+  var finalCorrectEl = document.getElementById("finalCorrect");
+  var finalWrongEl = document.getElementById("finalWrong");
+  var finalAccEl = document.getElementById("finalAcc");
   var newBestEl = document.getElementById("newBest");
+  var saveForm = document.getElementById("saveForm");
+  var nameInput = document.getElementById("nameInput");
+  var boardBody = document.getElementById("boardBody");
   var startBtn = document.getElementById("startBtn");
   var againBtn = document.getElementById("againBtn");
   var againHint = document.getElementById("againHint");
 
-  var state = "start"; // start | playing | between | over
-  var score = 0;
+  var state = "start"; // start | playing | over
+  var correct = 0;
+  var wrong = 0;
   var best = 0;
   var pair = null; // { firstSide: "left" | "right" }
   var deadline = 0;
   var rafId = 0;
+  var lockUntil = 0;
   var overShownAt = 0;
+  var savedThisRun = false;
+
+  // --- Leaderboard storage.
+  // Scores live in this browser's localStorage for now; swap these two
+  // functions for a hosted backend to make the board global.
+  var memBoard = [];
+
+  function loadBoard() {
+    try {
+      var raw = localStorage.getItem("alpha-board");
+      if (raw) memBoard = JSON.parse(raw) || [];
+    } catch (e) { /* storage unavailable; board lives in memory */ }
+    if (!Array.isArray(memBoard)) memBoard = [];
+  }
+
+  function persistBoard() {
+    try { localStorage.setItem("alpha-board", JSON.stringify(memBoard)); } catch (e) { /* in-memory only */ }
+  }
+
+  function sortedBoard() {
+    return memBoard.slice().sort(function (a, b) {
+      return (b.c - a.c) || (b.a - a.a) || (a.t - b.t);
+    });
+  }
 
   var isTouch = window.matchMedia("(pointer: coarse)").matches;
   if (isTouch) {
@@ -335,25 +465,27 @@
     againHint.hidden = true;
   }
 
+  loadBoard();
   try {
-    best = parseInt(localStorage.getItem("wcf-best"), 10) || 0;
-  } catch (e) { /* storage unavailable; best lives in memory */ }
-  bestEl.textContent = best;
+    best = parseInt(localStorage.getItem("alpha-best"), 10) || 0;
+    nameInput.value = localStorage.getItem("alpha-name") || "";
+  } catch (e) { /* defaults stand */ }
 
   function letter(i) { return String.fromCharCode(65 + i); }
 
+  function accuracy() {
+    var total = correct + wrong;
+    return total === 0 ? 0 : Math.round((100 * correct) / total);
+  }
+
   function pickPair() {
-    // Letters start far apart and creep closer together as the score climbs.
-    var maxGap = Math.max(3, 24 - score * 2);
+    // Letters start far apart and creep closer together as correct answers pile up.
+    var maxGap = Math.max(3, 24 - correct * 2);
     var gap = 1 + Math.floor(Math.random() * maxGap);
     var lo = Math.floor(Math.random() * (26 - gap));
     var hi = lo + gap;
     var firstOnLeft = Math.random() < 0.5;
-    pair = {
-      lo: lo,
-      hi: hi,
-      firstSide: firstOnLeft ? "left" : "right"
-    };
+    pair = { firstSide: firstOnLeft ? "left" : "right" };
     letL.textContent = letter(firstOnLeft ? lo : hi);
     letR.textContent = letter(firstOnLeft ? hi : lo);
   }
@@ -363,87 +495,165 @@
     tileR.classList.remove("correct", "wrong");
   }
 
-  function tick() {
-    var frac = (deadline - performance.now()) / ROUND_MS;
-    if (frac <= 0) {
-      fill.style.transform = "scaleX(0)";
-      timeUp();
-      return;
-    }
-    fill.style.transform = "scaleX(" + frac + ")";
-    fill.style.background = "hsl(" + Math.round(frac * 45) + ", 92%, 62%)";
-    rafId = requestAnimationFrame(tick);
+  function formatClock(ms) {
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
   }
 
-  function newRound() {
-    clearFlash();
-    pickPair();
-    state = "playing";
-    deadline = performance.now() + ROUND_MS;
-    cancelAnimationFrame(rafId);
+  function tick() {
+    var left = deadline - performance.now();
+    if (left <= 0) {
+      fill.style.transform = "scaleX(0)";
+      clockEl.textContent = "0:00";
+      endRun();
+      return;
+    }
+    var frac = left / RUN_MS;
+    fill.style.transform = "scaleX(" + frac + ")";
+    fill.style.background = "hsl(" + Math.round(Math.min(1, left / 15000) * 42) + ", 92%, 62%)";
+    clockEl.textContent = formatClock(left);
     rafId = requestAnimationFrame(tick);
   }
 
   function start() {
-    score = 0;
-    scoreEl.textContent = "0";
+    correct = 0;
+    wrong = 0;
+    savedThisRun = false;
+    okEl.textContent = "0";
+    missEl.textContent = "0";
     overlay.hidden = true;
-    panelStart.hidden = true;
-    newRound();
+    clearFlash();
+    pickPair();
+    state = "playing";
+    lockUntil = 0;
+    deadline = performance.now() + RUN_MS;
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function nextIfPlaying() {
+    if (state !== "playing") return;
+    clearFlash();
+    pickPair();
   }
 
   function choose(side) {
     if (state !== "playing") return;
-    state = "between";
-    cancelAnimationFrame(rafId);
+    var now = performance.now();
+    if (now < lockUntil) return;
 
     var chosen = side === "left" ? tileL : tileR;
-    var correctTile = pair.firstSide === "left" ? tileL : tileR;
+    var hit = side === pair.firstSide;
+    var holdMs;
 
-    if (side === pair.firstSide) {
-      score += 1;
-      scoreEl.textContent = score;
+    if (hit) {
+      correct += 1;
+      okEl.textContent = correct;
       chosen.classList.add("correct");
-      setTimeout(newRound, 320);
+      holdMs = 200;
     } else {
+      wrong += 1;
+      missEl.textContent = wrong;
       chosen.classList.add("wrong");
-      correctTile.classList.add("correct");
-      gameOver("Not quite");
+      (pair.firstSide === "left" ? tileL : tileR).classList.add("correct");
+      holdMs = 380;
     }
+
+    lockUntil = now + holdMs;
+    setTimeout(nextIfPlaying, holdMs);
   }
 
-  function timeUp() {
-    if (state !== "playing") return;
-    state = "between";
+  function endRun() {
+    state = "over";
     cancelAnimationFrame(rafId);
-    (pair.firstSide === "left" ? tileL : tileR).classList.add("correct");
-    gameOver("Time's up");
-  }
+    clearFlash();
 
-  function gameOver(title) {
-    var isNewBest = score > best;
+    var isNewBest = correct > best;
     if (isNewBest) {
-      best = score;
-      bestEl.textContent = best;
-      try { localStorage.setItem("wcf-best", String(best)); } catch (e) { /* in-memory only */ }
+      best = correct;
+      try { localStorage.setItem("alpha-best", String(best)); } catch (e) { /* in-memory only */ }
     }
 
-    overTitle.textContent = title;
-    factEl.textContent = letter(pair.lo) + " comes before " + letter(pair.hi) + ".";
-    finalScoreEl.textContent = score;
+    finalCorrectEl.textContent = correct;
+    finalWrongEl.textContent = wrong;
+    finalAccEl.textContent = (correct + wrong === 0) ? "—" : accuracy() + "%";
     newBestEl.hidden = !isNewBest;
+    saveForm.hidden = false;
+    renderBoard(null);
 
-    setTimeout(function () {
-      panelStart.hidden = true;
-      panelOver.hidden = false;
-      overlay.hidden = false;
-      state = "over";
-      overShownAt = performance.now();
-    }, 700);
+    panelStart.hidden = true;
+    panelOver.hidden = false;
+    overlay.hidden = false;
+    overShownAt = performance.now();
+    if (!isTouch) nameInput.focus();
   }
+
+  function renderBoard(highlightId) {
+    var rows = sortedBoard().slice(0, BOARD_SIZE);
+    boardBody.textContent = "";
+
+    if (rows.length === 0) {
+      var tr = document.createElement("tr");
+      var td = document.createElement("td");
+      td.className = "empty";
+      td.colSpan = 4;
+      td.textContent = "No scores yet. Yours could be first.";
+      tr.appendChild(td);
+      boardBody.appendChild(tr);
+      return;
+    }
+
+    rows.forEach(function (entry, i) {
+      var tr = document.createElement("tr");
+      if (highlightId !== null && entry.id === highlightId) tr.className = "me";
+
+      var rank = document.createElement("td");
+      rank.className = "rank num";
+      rank.textContent = i + 1;
+
+      var name = document.createElement("td");
+      name.textContent = entry.n;
+
+      var score = document.createElement("td");
+      score.className = "num";
+      score.textContent = entry.c;
+
+      var acc = document.createElement("td");
+      acc.className = "num";
+      acc.textContent = entry.a + "%";
+
+      tr.appendChild(rank);
+      tr.appendChild(name);
+      tr.appendChild(score);
+      tr.appendChild(acc);
+      boardBody.appendChild(tr);
+    });
+  }
+
+  saveForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (savedThisRun) return;
+    var name = nameInput.value.trim().slice(0, 12) || "Anonymous";
+    try { localStorage.setItem("alpha-name", name); } catch (err) { /* fine */ }
+
+    var entry = {
+      id: Date.now() + "-" + Math.floor(Math.random() * 1e6),
+      n: name,
+      c: correct,
+      a: accuracy(),
+      t: Date.now()
+    };
+    memBoard.push(entry);
+    memBoard = sortedBoard().slice(0, BOARD_CAP);
+    persistBoard();
+
+    savedThisRun = true;
+    saveForm.hidden = true;
+    renderBoard(entry.id);
+  });
 
   function restartFromKey() {
-    // Ignore key mashes that land right as the game-over panel appears.
+    // Ignore key mashes that land right as the results panel appears.
     if (state === "over" && performance.now() - overShownAt < 350) return;
     start();
   }
@@ -455,12 +665,13 @@
 
   window.addEventListener("keydown", function (e) {
     if (e.repeat) return;
+    if (e.target === nameInput) return; // typing a name, not playing
     var k = e.key.toLowerCase();
     if (state === "playing") {
       if (k === "q") choose("left");
       else if (k === "e") choose("right");
-    } else if (state === "start" || state === "over") {
-      if (k === "q" || k === "e" || k === " " || k === "enter") {
+    } else {
+      if (k === "q" || k === "e") {
         e.preventDefault();
         restartFromKey();
       }
