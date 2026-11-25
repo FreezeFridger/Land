@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Which Comes First?</title>
+<script defer data-domain="teiva.io" src="https://plausible.io/js/script.js"></script>
+<script>window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
 <style>
   :root {
     --bg: #1e2a5a;
@@ -528,6 +530,10 @@
     nameInput.value = localStorage.getItem("alpha-name") || "";
   } catch (e) { /* defaults stand */ }
 
+  function track(name, props) {
+    try { window.plausible(name, props ? { props: props } : undefined); } catch (e) { /* analytics must never break the game */ }
+  }
+
   function letter(i) { return String.fromCharCode(65 + i); }
 
   function accuracy() {
@@ -618,6 +624,7 @@
     qFill.style.transform = "scaleX(1)";
     cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(tick);
+    track("Game Start");
   }
 
   function nextPair() {
@@ -650,6 +657,8 @@
       best = correct;
       try { localStorage.setItem("alpha-best", String(best)); } catch (e) { /* in-memory only */ }
     }
+
+    track("Game Finish", { score: correct, wrong: wrong, accuracy: accuracy() });
 
     finalCorrectEl.textContent = correct;
     finalWrongEl.textContent = wrong;
@@ -740,6 +749,7 @@
     saveForm.hidden = true;
 
     submitScore(name).then(function (id) {
+      track("Score Saved", { score: correct, accuracy: accuracy() });
       showBoard(id);
     }).catch(function () {
       // Couldn't reach the shared board: keep the score in this browser.
