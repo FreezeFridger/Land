@@ -569,7 +569,7 @@
     return fetch(SB_URL, {
       method: "POST",
       headers: sbHeaders({ Prefer: "return=representation" }),
-      body: JSON.stringify({ name: name, score: savedScore(), accuracy: accuracy() })
+      body: JSON.stringify({ name: name, score: netScore(), accuracy: accuracy() })
     }).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
@@ -683,15 +683,10 @@
     return total === 0 ? 0 : Math.round((100 * correct) / total);
   }
 
-  // Score: right minus wrong. Spamming nets about nothing and idling
-  // bleeds timeouts, so fast honest play wins. Display shows the raw
-  // value (can dip negative); what gets saved is floored at zero.
+  // Score: right minus wrong, negatives included. Spamming nets about
+  // nothing and idling bleeds timeouts, so fast honest play wins.
   function netScore() {
     return correct - wrong;
-  }
-
-  function savedScore() {
-    return Math.max(0, netScore());
   }
 
   // Letter pool: A, B, Y and Z are too easy, so they never appear.
@@ -813,9 +808,9 @@
     state = "over";
     cancelAnimationFrame(rafId);
 
-    var isNewBest = savedScore() > best;
+    var isNewBest = netScore() > best;
     if (isNewBest) {
-      best = savedScore();
+      best = netScore();
       try { localStorage.setItem("alpha-best", String(best)); } catch (e) { /* in-memory only */ }
     }
 
@@ -911,14 +906,14 @@
     saveForm.hidden = true;
 
     submitScore(name).then(function (id) {
-      track("Score Saved", { score: savedScore(), accuracy: accuracy() });
+      track("Score Saved", { score: netScore(), accuracy: accuracy() });
       showBoard(id);
     }).catch(function () {
       // Couldn't reach the shared board: keep the score in this browser.
       var entry = {
         id: Date.now() + "-" + Math.floor(Math.random() * 1e6),
         n: name,
-        c: savedScore(),
+        c: netScore(),
         a: accuracy(),
         t: Date.now()
       };
