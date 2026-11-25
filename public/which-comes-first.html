@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Which Comes First?</title>
+<style>
+  :root {
+    --bg: #1e2a5a;
+    --bg-deep: #16204a;
+    --paper: #f6f1e6;
+    --paper-edge: #d8d0bd;
+    --ink: #1c2340;
+    --gold: #ffc845;
+    --green: #34c77b;
+    --red: #f4604d;
+    --chrome: #aab3d6;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: radial-gradient(120% 90% at 50% 0%, var(--bg) 0%, var(--bg-deep) 100%);
+    color: var(--paper);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .wrap {
+    width: min(100%, 560px);
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    gap: 14px;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--paper);
+  }
+
+  .scores {
+    display: flex;
+    gap: 14px;
+    font-size: 14px;
+    color: var(--chrome);
+    white-space: nowrap;
+  }
+
+  .scores b {
+    color: var(--gold);
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+    margin-left: 4px;
+  }
+
+  .timer {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    flex: none;
+  }
+
+  .timer-fill {
+    height: 100%;
+    width: 100%;
+    border-radius: 4px;
+    background: var(--gold);
+    transform-origin: left center;
+  }
+
+  .stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .tiles {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .tile {
+    appearance: none;
+    border: 0;
+    padding: 0 0 18px;
+    border-radius: 22px;
+    background: var(--paper);
+    box-shadow: 0 6px 0 var(--paper-edge);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    touch-action: manipulation;
+    transition: transform 90ms ease, box-shadow 90ms ease, background-color 120ms ease;
+  }
+
+  .tile:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--paper-edge); }
+
+  .tile:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 3px;
+  }
+
+  .tile .letter {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    font-size: clamp(5rem, 26vmin, 11rem);
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .tile kbd {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    opacity: 0.45;
+    border: 1.5px solid currentColor;
+    border-radius: 6px;
+    padding: 2px 9px;
+  }
+
+  body.touch .tile kbd { display: none; }
+
+  .tile.correct { background: var(--green); box-shadow: 0 6px 0 #22925a; }
+  .tile.correct .letter, .tile.correct kbd { color: #0c3321; }
+
+  .tile.wrong { background: var(--red); box-shadow: 0 6px 0 #ba3b2c; animation: shake 320ms ease; }
+  .tile.wrong .letter, .tile.wrong kbd { color: #4a130c; }
+
+  @keyframes shake {
+    20% { transform: translateX(-7px); }
+    45% { transform: translateX(6px); }
+    70% { transform: translateX(-4px); }
+    90% { transform: translateX(2px); }
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 22px;
+    background: rgba(22, 32, 74, 0.82);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+
+  .overlay[hidden] { display: none; }
+
+  .panel h2 {
+    margin: 0 0 10px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.8rem, 7vmin, 2.6rem);
+    font-weight: 700;
+    color: var(--paper);
+  }
+
+  .panel p {
+    margin: 0 auto 24px;
+    max-width: 34ch;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--chrome);
+  }
+
+  .panel p kbd {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--paper);
+    border: 1.5px solid currentColor;
+    border-radius: 5px;
+    padding: 1px 7px;
+  }
+
+  .final {
+    font-size: 17px;
+    color: var(--paper);
+    margin: 0 0 6px;
+  }
+
+  .final b {
+    color: var(--gold);
+    font-size: 34px;
+    font-variant-numeric: tabular-nums;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .new-best {
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 15px;
+    margin: 0 0 18px;
+  }
+
+  .cta {
+    appearance: none;
+    border: 0;
+    border-radius: 14px;
+    background: var(--gold);
+    color: #3a2c00;
+    font: 600 17px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 15px 36px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #c79422;
+    touch-action: manipulation;
+    transition: transform 90ms ease, box-shadow 90ms ease;
+  }
+
+  .cta:active { transform: translateY(3px); box-shadow: 0 1px 0 #c79422; }
+
+  .cta:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
+
+  .hint {
+    margin: 14px 0 0;
+    font-size: 13px;
+    color: var(--chrome);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile, .cta { transition: none; }
+    .tile.wrong { animation: none; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Which comes first?</h1>
+    <div class="scores">
+      <span>Score<b id="score">0</b></span>
+      <span>Best<b id="best">0</b></span>
+    </div>
+  </header>
+
+  <div class="timer" aria-hidden="true"><div class="timer-fill" id="timerFill"></div></div>
+
+  <div class="stage">
+    <div class="tiles">
+      <button class="tile" id="tileLeft" aria-label="Pick the left letter (Q key)">
+        <span class="letter" id="letterLeft">A</span>
+        <kbd>Q</kbd>
+      </button>
+      <button class="tile" id="tileRight" aria-label="Pick the right letter (E key)">
+        <span class="letter" id="letterRight">Z</span>
+        <kbd>E</kbd>
+      </button>
+    </div>
+
+    <div class="overlay" id="overlay">
+      <div class="panel" id="panelStart">
+        <h2>Two letters.<br>Three seconds.</h2>
+        <p>Pick the one that comes earlier in the alphabet. Tap a tile, or press <kbd>Q</kbd> for left and <kbd>E</kbd> for right.</p>
+        <button class="cta" id="startBtn">Start</button>
+      </div>
+      <div class="panel" id="panelOver" hidden>
+        <h2 id="overTitle">Time's up</h2>
+        <p id="fact"></p>
+        <p class="final">You got <b id="finalScore">0</b></p>
+        <p class="new-best" id="newBest" hidden>New best!</p>
+        <button class="cta" id="againBtn">Play again</button>
+        <p class="hint" id="againHint">or press Q / E</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var ROUND_MS = 3000;
+
+  var tileL = document.getElementById("tileLeft");
+  var tileR = document.getElementById("tileRight");
+  var letL = document.getElementById("letterLeft");
+  var letR = document.getElementById("letterRight");
+  var scoreEl = document.getElementById("score");
+  var bestEl = document.getElementById("best");
+  var fill = document.getElementById("timerFill");
+  var overlay = document.getElementById("overlay");
+  var panelStart = document.getElementById("panelStart");
+  var panelOver = document.getElementById("panelOver");
+  var overTitle = document.getElementById("overTitle");
+  var factEl = document.getElementById("fact");
+  var finalScoreEl = document.getElementById("finalScore");
+  var newBestEl = document.getElementById("newBest");
+  var startBtn = document.getElementById("startBtn");
+  var againBtn = document.getElementById("againBtn");
+  var againHint = document.getElementById("againHint");
+
+  var state = "start"; // start | playing | between | over
+  var score = 0;
+  var best = 0;
+  var pair = null; // { firstSide: "left" | "right" }
+  var deadline = 0;
+  var rafId = 0;
+  var overShownAt = 0;
+
+  var isTouch = window.matchMedia("(pointer: coarse)").matches;
+  if (isTouch) {
+    document.body.classList.add("touch");
+    againHint.hidden = true;
+  }
+
+  try {
+    best = parseInt(localStorage.getItem("wcf-best"), 10) || 0;
+  } catch (e) { /* storage unavailable; best lives in memory */ }
+  bestEl.textContent = best;
+
+  function letter(i) { return String.fromCharCode(65 + i); }
+
+  function pickPair() {
+    // Letters start far apart and creep closer together as the score climbs.
+    var maxGap = Math.max(3, 24 - score * 2);
+    var gap = 1 + Math.floor(Math.random() * maxGap);
+    var lo = Math.floor(Math.random() * (26 - gap));
+    var hi = lo + gap;
+    var firstOnLeft = Math.random() < 0.5;
+    pair = {
+      lo: lo,
+      hi: hi,
+      firstSide: firstOnLeft ? "left" : "right"
+    };
+    letL.textContent = letter(firstOnLeft ? lo : hi);
+    letR.textContent = letter(firstOnLeft ? hi : lo);
+  }
+
+  function clearFlash() {
+    tileL.classList.remove("correct", "wrong");
+    tileR.classList.remove("correct", "wrong");
+  }
+
+  function tick() {
+    var frac = (deadline - performance.now()) / ROUND_MS;
+    if (frac <= 0) {
+      fill.style.transform = "scaleX(0)";
+      timeUp();
+      return;
+    }
+    fill.style.transform = "scaleX(" + frac + ")";
+    fill.style.background = "hsl(" + Math.round(frac * 45) + ", 92%, 62%)";
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function newRound() {
+    clearFlash();
+    pickPair();
+    state = "playing";
+    deadline = performance.now() + ROUND_MS;
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function start() {
+    score = 0;
+    scoreEl.textContent = "0";
+    overlay.hidden = true;
+    panelStart.hidden = true;
+    newRound();
+  }
+
+  function choose(side) {
+    if (state !== "playing") return;
+    state = "between";
+    cancelAnimationFrame(rafId);
+
+    var chosen = side === "left" ? tileL : tileR;
+    var correctTile = pair.firstSide === "left" ? tileL : tileR;
+
+    if (side === pair.firstSide) {
+      score += 1;
+      scoreEl.textContent = score;
+      chosen.classList.add("correct");
+      setTimeout(newRound, 320);
+    } else {
+      chosen.classList.add("wrong");
+      correctTile.classList.add("correct");
+      gameOver("Not quite");
+    }
+  }
+
+  function timeUp() {
+    if (state !== "playing") return;
+    state = "between";
+    cancelAnimationFrame(rafId);
+    (pair.firstSide === "left" ? tileL : tileR).classList.add("correct");
+    gameOver("Time's up");
+  }
+
+  function gameOver(title) {
+    var isNewBest = score > best;
+    if (isNewBest) {
+      best = score;
+      bestEl.textContent = best;
+      try { localStorage.setItem("wcf-best", String(best)); } catch (e) { /* in-memory only */ }
+    }
+
+    overTitle.textContent = title;
+    factEl.textContent = letter(pair.lo) + " comes before " + letter(pair.hi) + ".";
+    finalScoreEl.textContent = score;
+    newBestEl.hidden = !isNewBest;
+
+    setTimeout(function () {
+      panelStart.hidden = true;
+      panelOver.hidden = false;
+      overlay.hidden = false;
+      state = "over";
+      overShownAt = performance.now();
+    }, 700);
+  }
+
+  function restartFromKey() {
+    // Ignore key mashes that land right as the game-over panel appears.
+    if (state === "over" && performance.now() - overShownAt < 350) return;
+    start();
+  }
+
+  tileL.addEventListener("pointerdown", function (e) { e.preventDefault(); choose("left"); });
+  tileR.addEventListener("pointerdown", function (e) { e.preventDefault(); choose("right"); });
+  startBtn.addEventListener("click", start);
+  againBtn.addEventListener("click", start);
+
+  window.addEventListener("keydown", function (e) {
+    if (e.repeat) return;
+    var k = e.key.toLowerCase();
+    if (state === "playing") {
+      if (k === "q") choose("left");
+      else if (k === "e") choose("right");
+    } else if (state === "start" || state === "over") {
+      if (k === "q" || k === "e" || k === " " || k === "enter") {
+        e.preventDefault();
+        restartFromKey();
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
