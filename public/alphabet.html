@@ -169,13 +169,19 @@
 
   body.touch .tile kbd { display: none; }
 
+  .dots {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    flex: none;
+  }
+
   .dot {
     width: 10px;
     height: 10px;
     margin: 2px auto 0;
     border-radius: 50%;
     background: transparent;
-    flex: none;
   }
 
   .dot.good { background: var(--green); }
@@ -408,7 +414,10 @@
     </div>
   </div>
 
-  <div class="dot" id="dot" aria-hidden="true"></div>
+  <div class="dots" aria-hidden="true">
+    <div class="dot" id="dotLeft"></div>
+    <div class="dot" id="dotRight"></div>
+  </div>
 </main>
 
 <script>
@@ -429,7 +438,13 @@
   var missEl = document.getElementById("missCount");
   var fill = document.getElementById("timerFill");
   var qFill = document.getElementById("qFill");
-  var dot = document.getElementById("dot");
+  var dotL = document.getElementById("dotLeft");
+  var dotR = document.getElementById("dotRight");
+
+  function setDots(leftCls, rightCls) {
+    dotL.className = "dot" + (leftCls ? " " + leftCls : "");
+    dotR.className = "dot" + (rightCls ? " " + rightCls : "");
+  }
   var overlay = document.getElementById("overlay");
   var panelStart = document.getElementById("panelStart");
   var panelOver = document.getElementById("panelOver");
@@ -605,7 +620,7 @@
   function qTimeout() {
     wrong += 1;
     missEl.textContent = wrong;
-    dot.className = "dot bad";
+    setDots("bad", "bad");
     nextPair();
   }
 
@@ -616,7 +631,7 @@
     okEl.textContent = "0";
     missEl.textContent = "0";
     overlay.hidden = true;
-    dot.className = "dot";
+    setDots("", "");
     pickPair();
     state = "playing";
     deadline = performance.now() + RUN_MS;
@@ -636,15 +651,16 @@
   function choose(side) {
     if (state !== "playing") return;
 
-    if (side === pair.firstSide) {
+    var hit = side === pair.firstSide;
+    if (hit) {
       correct += 1;
       okEl.textContent = correct;
-      dot.className = "dot good";
     } else {
       wrong += 1;
       missEl.textContent = wrong;
-      dot.className = "dot bad";
     }
+    var cls = hit ? "good" : "bad";
+    setDots(side === "left" ? cls : "", side === "right" ? cls : "");
     nextPair();
   }
 
