@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>alphabet</title>
+<meta property="og:title" content="Which comes first?">
+<meta property="og:description" content="Two letters, two seconds a pair, 30-second runs. Beat the global leaderboard.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://teiva.io/alphabet">
+<meta property="og:image" content="https://teiva.io/alphabet-og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Which comes first?">
+<meta name="twitter:description" content="Two letters, two seconds a pair, 30-second runs. Beat the global leaderboard.">
+<meta name="twitter:image" content="https://teiva.io/alphabet-og.png">
 <!-- Privacy-friendly analytics by Plausible -->
 <script async src="https://plausible.io/js/pa-Knsl2v0jbGRj1lN-UiYwt.js"></script>
 <script>
@@ -381,6 +390,29 @@
 
   .cta:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
 
+  .linklike {
+    display: block;
+    margin: 14px auto 0;
+    background: none;
+    border: 0;
+    padding: 4px 8px;
+    color: var(--chrome);
+    font: 500 14px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .linklike:hover { color: var(--paper); }
+
+  .linklike:focus-visible {
+    outline: 2px solid var(--gold);
+    border-radius: 6px;
+  }
+
+  .panel.browse .result,
+  .panel.browse .new-best { display: none; }
+
   .again { margin-top: 22px; }
 
   .hint {
@@ -427,10 +459,11 @@
         <h2>Thirty seconds.<br>Two seconds a pair.</h2>
         <p class="lede">Pick the letter that comes earlier in the alphabet. Tap a tile, or press <kbd>Q</kbd> for left and <kbd>E</kbd> for right. Too slow on a pair counts as wrong.</p>
         <button class="cta" id="startBtn">Start</button>
+        <button class="linklike" id="boardBtn" type="button">Leaderboard</button>
       </div>
 
       <div class="panel" id="panelOver" hidden>
-        <h2>Time's up</h2>
+        <h2 id="overTitle">Time's up</h2>
         <p class="result"><span id="finalScore">0</span> points
           <small><span id="finalRight">0</span> right &middot; <span id="finalWrong">0</span> wrong &middot; <span id="finalAcc">0%</span> accuracy</small>
         </p>
@@ -499,6 +532,8 @@
   var nameInput = document.getElementById("nameInput");
   var boardBody = document.getElementById("boardBody");
   var startBtn = document.getElementById("startBtn");
+  var boardBtn = document.getElementById("boardBtn");
+  var overTitleEl = document.getElementById("overTitle");
   var againBtn = document.getElementById("againBtn");
   var againHint = document.getElementById("againHint");
 
@@ -522,6 +557,20 @@
   var SB_URL = "https://oojayxmgkhdnpjuhjfoo.supabase.co/rest/v1/alphabet_scores";
   var SB_KEY = "sb_publishable_7SZ6Csdqh_WC3XpMJZQInw_jL41DfgT";
 
+  // Anonymous per-browser id so the board can show each device's best run.
+  var deviceId = "";
+  try {
+    deviceId = localStorage.getItem("alpha-device") || "";
+    if (!deviceId) {
+      deviceId = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : Date.now() + "-" + Math.random().toString(36).slice(2);
+      localStorage.setItem("alpha-device", deviceId);
+    }
+  } catch (e) {
+    deviceId = "mem-" + Math.random().toString(36).slice(2);
+  }
+
   function sbHeaders(extra) {
     var h = {
       apikey: SB_KEY,
@@ -533,15 +582,23 @@
   }
 
   function fetchBoard() {
-    return fetch(SB_URL + "?select=id,name,score,accuracy&order=score.desc,accuracy.desc,created_at.asc&limit=" + BOARD_SIZE, {
+    return fetch(SB_URL + "?select=id,name,score,accuracy,device_id&order=score.desc,accuracy.desc,created_at.asc&limit=120", {
       headers: sbHeaders({})
     }).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
     }).then(function (rows) {
-      return rows.map(function (row) {
-        return { id: "sb-" + row.id, n: row.name, c: row.score, a: row.accuracy };
-      });
+      // One slot per device: rows arrive best-first, keep each device's first.
+      var seen = {};
+      var out = [];
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var key = row.device_id || "row-" + row.id;
+        if (seen[key]) continue;
+        seen[key] = true;
+        out.push({ id: "sb-" + row.id, n: row.name, c: row.score, a: row.accuracy });
+      }
+      return out;
     });
   }
 
@@ -549,7 +606,7 @@
     return fetch(SB_URL, {
       method: "POST",
       headers: sbHeaders({ Prefer: "return=representation" }),
-      body: JSON.stringify({ name: name, score: netScore(), accuracy: accuracy() })
+      body: JSON.stringify({ name: name, score: netScore(), accuracy: accuracy(), device_id: deviceId })
     }).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
@@ -734,6 +791,9 @@
     finalAccEl.textContent = (correct + wrong === 0) ? "—" : accuracy() + "%";
     newBestEl.hidden = !isNewBest;
     saveForm.hidden = false;
+    panelOver.classList.remove("browse");
+    overTitleEl.textContent = "Time's up";
+    againBtn.textContent = "Play again";
     showBoard(null);
 
     panelStart.hidden = true;
@@ -843,9 +903,23 @@
     start();
   }
 
+  function showBrowse() {
+    panelOver.classList.add("browse");
+    overTitleEl.textContent = "Leaderboard";
+    againBtn.textContent = "Play";
+    saveForm.hidden = true;
+    newBestEl.hidden = true;
+    showBoard(null);
+    panelStart.hidden = true;
+    panelOver.hidden = false;
+    state = "over";
+    overShownAt = performance.now();
+  }
+
   tileL.addEventListener("pointerdown", function (e) { e.preventDefault(); choose("left"); });
   tileR.addEventListener("pointerdown", function (e) { e.preventDefault(); choose("right"); });
   startBtn.addEventListener("click", start);
+  boardBtn.addEventListener("click", showBrowse);
   againBtn.addEventListener("click", start);
 
   window.addEventListener("keydown", function (e) {
