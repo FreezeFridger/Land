@@ -534,10 +534,10 @@
     return total === 0 ? 0 : Math.round((100 * correct) / total);
   }
 
-  // Letter pool: A, B, X and Z are too easy, so they never appear.
+  // Letter pool: A, B, Y and Z are too easy, so they never appear.
   var LETTERS = [];
   (function () {
-    var excluded = { 0: true, 1: true, 23: true, 25: true }; // A, B, X, Z
+    var excluded = { 0: true, 1: true, 24: true, 25: true }; // A, B, Y, Z
     for (var i = 0; i < 26; i++) { if (!excluded[i]) LETTERS.push(i); }
   })();
 
