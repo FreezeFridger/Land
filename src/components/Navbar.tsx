@@ -81,15 +81,6 @@ const Navbar = () => {
           >
             Blog
           </Link>
-          <span style={separatorStyle}>•</span>
-          <a
-            href={`${import.meta.env.BASE_URL}which-comes-first.html`}
-            style={linkStyle}
-            onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#2563eb'}
-            onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#475569'}
-          >
-            Game
-          </a>
         </div>
       </div>
     </nav>
