@@ -532,7 +532,9 @@
   var correct = 0;
   var wrong = 0;
   var best = 0;
-  var pair = null; // { firstSide: "left" | "right" }
+  var pair = null; // { firstSide: "left" | "right", lo, hi }
+  var pairShownAt = 0;
+  var runAnswers = [];
   var deadline = 0;
   var qDeadline = 0;
   var rafId = 0;
@@ -546,6 +548,7 @@
   // below is meant to be public: it only allows what the database's row
   // level security policies allow (read scores, add a score).
   var SB_URL = "https://oojayxmgkhdnpjuhjfoo.supabase.co/rest/v1/alphabet_scores";
+  var SB_ANSWERS_URL = "https://oojayxmgkhdnpjuhjfoo.supabase.co/rest/v1/alphabet_answers";
   var SB_KEY = "sb_publishable_7SZ6Csdqh_WC3XpMJZQInw_jL41DfgT";
 
   // Anonymous per-browser id so the board can show each device's best run.
@@ -682,7 +685,12 @@
     }
     lastPairKey = lo + "-" + hi;
     var firstOnLeft = Math.random() < 0.5;
-    pair = { firstSide: firstOnLeft ? "left" : "right" };
+    pair = {
+      firstSide: firstOnLeft ? "left" : "right",
+      lo: letter(lo),
+      hi: letter(hi)
+    };
+    pairShownAt = performance.now();
     letL.textContent = letter(firstOnLeft ? lo : hi);
     letR.textContent = letter(firstOnLeft ? hi : lo);
   }
@@ -718,14 +726,44 @@
     wrong += 1;
     missEl.textContent = wrong;
     ptsEl.textContent = netScore();
+    logAnswer("timeout", false);
     setDots("bad", "bad");
     nextPair();
+  }
+
+  // One record per answered pair; the batch posts once when the run ends.
+  function logAnswer(picked, hit) {
+    runAnswers.push({
+      lo: pair.lo,
+      hi: pair.hi,
+      first_side: pair.firstSide,
+      picked: picked,
+      correct: hit,
+      ms: Math.min(Math.round(performance.now() - pairShownAt), 10000)
+    });
+  }
+
+  function submitAnswers() {
+    if (!runAnswers.length) return;
+    var rows = runAnswers.map(function (a) {
+      a.device_id = deviceId;
+      return a;
+    });
+    runAnswers = [];
+    try {
+      fetch(SB_ANSWERS_URL, {
+        method: "POST",
+        headers: sbHeaders({ Prefer: "return=minimal" }),
+        body: JSON.stringify(rows)
+      }).catch(function () { /* stats are best-effort */ });
+    } catch (e) { /* stats are best-effort */ }
   }
 
   function start() {
     correct = 0;
     wrong = 0;
     savedThisRun = false;
+    runAnswers = [];
     okEl.textContent = "0";
     missEl.textContent = "0";
     ptsEl.textContent = "0";
@@ -759,6 +797,7 @@
       missEl.textContent = wrong;
     }
     ptsEl.textContent = netScore();
+    logAnswer(side, hit);
     var cls = hit ? "good" : "bad";
     setDots(side === "left" ? cls : "", side === "right" ? cls : "");
     nextPair();
@@ -775,6 +814,7 @@
     }
 
     track("Game Finish", { score: netScore(), right: correct, wrong: wrong, accuracy: accuracy() });
+    submitAnswers();
 
     finalScoreEl.textContent = netScore();
     finalRightEl.textContent = correct;
