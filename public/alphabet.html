@@ -167,18 +167,17 @@
 
   body.touch .tile kbd { display: none; }
 
-  .tile.correct { background: var(--green); }
-  .tile.correct .letter, .tile.correct kbd { color: #0c3321; }
-
-  .tile.wrong { background: var(--red); animation: shake 320ms ease; }
-  .tile.wrong .letter, .tile.wrong kbd { color: #4a130c; }
-
-  @keyframes shake {
-    20% { transform: translateX(-7px); }
-    45% { transform: translateX(6px); }
-    70% { transform: translateX(-4px); }
-    90% { transform: translateX(2px); }
+  .dot {
+    width: 10px;
+    height: 10px;
+    margin: 2px auto 0;
+    border-radius: 50%;
+    background: transparent;
+    flex: none;
   }
+
+  .dot.good { background: var(--green); }
+  .dot.bad { background: var(--red); }
 
   .overlay {
     position: fixed;
@@ -345,7 +344,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     .tile, .cta { transition: none; }
-    .tile.wrong { animation: none; }
   }
 </style>
 </head>
@@ -407,6 +405,8 @@
       </div>
     </div>
   </div>
+
+  <div class="dot" id="dot" aria-hidden="true"></div>
 </main>
 
 <script>
@@ -427,6 +427,7 @@
   var missEl = document.getElementById("missCount");
   var fill = document.getElementById("timerFill");
   var qFill = document.getElementById("qFill");
+  var dot = document.getElementById("dot");
   var overlay = document.getElementById("overlay");
   var panelStart = document.getElementById("panelStart");
   var panelOver = document.getElementById("panelOver");
@@ -449,7 +450,7 @@
   var deadline = 0;
   var qDeadline = 0;
   var rafId = 0;
-  var lockUntil = 0;
+  var lastPairKey = "";
   var overShownAt = 0;
   var savedThisRun = false;
 
@@ -553,15 +554,19 @@
     var b = partners[Math.floor(Math.random() * partners.length)];
     var lo = Math.min(a, b);
     var hi = Math.max(a, b);
+    // Pairs advance instantly, so never deal the same pair twice in a row.
+    if (lastPairKey === lo + "-" + hi && partners.length > 1) {
+      var alt = b;
+      while (alt === b) { alt = partners[Math.floor(Math.random() * partners.length)]; }
+      b = alt;
+      lo = Math.min(a, b);
+      hi = Math.max(a, b);
+    }
+    lastPairKey = lo + "-" + hi;
     var firstOnLeft = Math.random() < 0.5;
     pair = { firstSide: firstOnLeft ? "left" : "right" };
     letL.textContent = letter(firstOnLeft ? lo : hi);
     letR.textContent = letter(firstOnLeft ? hi : lo);
-  }
-
-  function clearFlash() {
-    tileL.classList.remove("correct", "wrong");
-    tileR.classList.remove("correct", "wrong");
   }
 
   function formatClock(ms) {
@@ -582,25 +587,20 @@
     fill.style.background = "hsl(" + Math.round(Math.min(1, left / 15000) * 42) + ", 92%, 62%)";
     clockEl.textContent = formatClock(left);
 
-    // The 3-second shot clock only runs while a pair is answerable.
-    if (now >= lockUntil) {
-      var qLeft = qDeadline - now;
-      if (qLeft <= 0) {
-        qFill.style.transform = "scaleX(0)";
-        qTimeout(now);
-      } else {
-        qFill.style.transform = "scaleX(" + (qLeft / Q_MS) + ")";
-      }
+    var qLeft = qDeadline - now;
+    if (qLeft <= 0) {
+      qTimeout();
+    } else {
+      qFill.style.transform = "scaleX(" + (qLeft / Q_MS) + ")";
     }
     rafId = requestAnimationFrame(tick);
   }
 
-  function qTimeout(now) {
+  function qTimeout() {
     wrong += 1;
     missEl.textContent = wrong;
-    (pair.firstSide === "left" ? tileL : tileR).classList.add("correct");
-    lockUntil = now + 380;
-    setTimeout(nextIfPlaying, 380);
+    dot.className = "dot bad";
+    nextPair();
   }
 
   function start() {
@@ -610,10 +610,9 @@
     okEl.textContent = "0";
     missEl.textContent = "0";
     overlay.hidden = true;
-    clearFlash();
+    dot.className = "dot";
     pickPair();
     state = "playing";
-    lockUntil = 0;
     deadline = performance.now() + RUN_MS;
     qDeadline = performance.now() + Q_MS;
     qFill.style.transform = "scaleX(1)";
@@ -621,9 +620,7 @@
     rafId = requestAnimationFrame(tick);
   }
 
-  function nextIfPlaying() {
-    if (state !== "playing") return;
-    clearFlash();
+  function nextPair() {
     pickPair();
     qDeadline = performance.now() + Q_MS;
     qFill.style.transform = "scaleX(1)";
@@ -631,34 +628,22 @@
 
   function choose(side) {
     if (state !== "playing") return;
-    var now = performance.now();
-    if (now < lockUntil) return;
 
-    var chosen = side === "left" ? tileL : tileR;
-    var hit = side === pair.firstSide;
-    var holdMs;
-
-    if (hit) {
+    if (side === pair.firstSide) {
       correct += 1;
       okEl.textContent = correct;
-      chosen.classList.add("correct");
-      holdMs = 200;
+      dot.className = "dot good";
     } else {
       wrong += 1;
       missEl.textContent = wrong;
-      chosen.classList.add("wrong");
-      (pair.firstSide === "left" ? tileL : tileR).classList.add("correct");
-      holdMs = 380;
+      dot.className = "dot bad";
     }
-
-    lockUntil = now + holdMs;
-    setTimeout(nextIfPlaying, holdMs);
+    nextPair();
   }
 
   function endRun() {
     state = "over";
     cancelAnimationFrame(rafId);
-    clearFlash();
 
     var isNewBest = correct > best;
     if (isNewBest) {
