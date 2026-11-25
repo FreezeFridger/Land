@@ -1,14 +1,20 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Navbar = () => {
+type NavbarProps = {
+  darkMode: boolean;
+  toggleDarkMode: () => void;
+};
+
+const Navbar = ({ darkMode, toggleDarkMode }: NavbarProps) => {
   const navStyle: React.CSSProperties = {
-    backgroundColor: '#f1f5f9',
-    borderBottom: '1px solid #cbd5e1',
+    backgroundColor: darkMode ? '#1e293b' : '#f1f5f9',
+    borderBottom: darkMode ? '1px solid #475569' : '1px solid #cbd5e1',
     position: 'sticky',
     width: '100%',
     top: 0,
-    zIndex: 50
+    zIndex: 50,
+    transition: 'background-color 0.3s, border-color 0.3s'
   };
 
   const containerStyle: React.CSSProperties = {
@@ -23,7 +29,7 @@ const Navbar = () => {
   const brandStyle: React.CSSProperties = {
     fontSize: '28px',
     fontWeight: '700',
-    color: '#1e293b',
+    color: darkMode ? '#f1f5f9' : '#1e293b',
     textDecoration: 'none',
     transition: 'color 0.2s'
   };
@@ -35,7 +41,7 @@ const Navbar = () => {
   };
 
   const linkStyle: React.CSSProperties = {
-    color: '#475569',
+    color: darkMode ? '#cbd5e1' : '#475569',
     fontWeight: '500',
     textDecoration: 'none',
     transition: 'color 0.2s',
@@ -44,43 +50,64 @@ const Navbar = () => {
   };
 
   const separatorStyle: React.CSSProperties = {
-    color: '#94a3b8'
+    color: darkMode ? '#64748b' : '#94a3b8'
+  };
+
+  const toggleButtonStyle: React.CSSProperties = {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '8px',
+    transition: 'background-color 0.2s',
+    backgroundColor: darkMode ? '#334155' : '#e2e8f0',
+    width: '40px',
+    height: '40px'
+  };
+
+  const toggleIconStyle: React.CSSProperties = {
+    fontSize: '20px',
+    color: darkMode ? '#fbbf24' : '#475569',
+    transition: 'transform 0.3s'
   };
 
   return (
     <nav style={navStyle}>
       <div style={containerStyle}>
-        {/* Logo/Brand */}
         <div>
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             style={brandStyle}
-            onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#2563eb'}
-            onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#1e293b'}
+            onMouseEnter={(e) => ((e.target as HTMLElement).style.color = '#2563eb')}
+            onMouseLeave={(e) => ((e.target as HTMLElement).style.color = darkMode ? '#f1f5f9' : '#1e293b')}
           >
             Teiva Jabbour
           </Link>
         </div>
 
-        {/* Navigation Links */}
         <div style={navLinksStyle}>
           <Link
             to="/"
             style={linkStyle}
-            onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#2563eb'}
-            onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#475569'}
+            onMouseEnter={(e) => ((e.target as HTMLElement).style.color = '#2563eb')}
+            onMouseLeave={(e) => ((e.target as HTMLElement).style.color = darkMode ? '#cbd5e1' : '#475569')}
           >
             Home
           </Link>
           <span style={separatorStyle}>•</span>
-          <Link
-            to="/blog"
-            style={linkStyle}
-            onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#2563eb'}
-            onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#475569'}
+          <button
+            onClick={toggleDarkMode}
+            style={toggleButtonStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = darkMode ? '#475569' : '#cbd5e1')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = darkMode ? '#334155' : '#e2e8f0')}
+            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            Blog
-          </Link>
+            <span style={toggleIconStyle}>{darkMode ? '☀️' : '🌙'}</span>
+          </button>
         </div>
       </div>
     </nav>
