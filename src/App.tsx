@@ -5,6 +5,12 @@ import { HashRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar';
 import Home from './pages/home'
 
+declare global {
+  interface Window {
+    plausible?: (event: string, opts?: { props?: Record<string, string | number> }) => void;
+  }
+}
+
 function App() {
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('darkMode');
@@ -21,7 +27,11 @@ function App() {
     }
   }, [darkMode]);
 
-  const toggleDarkMode = () => setDarkMode(!darkMode);
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    window.plausible?.('Dark Mode', { props: { mode: next ? 'dark' : 'light' } });
+  };
 
   return (
     <Router>
