@@ -653,11 +653,10 @@
     return correct - wrong;
   }
 
-  // Letter pool: A, B, Y and Z are too easy, so they never appear.
+  // Letter pool: the full alphabet, A through Z.
   var LETTERS = [];
   (function () {
-    var excluded = { 0: true, 1: true, 24: true, 25: true }; // A, B, Y, Z
-    for (var i = 0; i < 26; i++) { if (!excluded[i]) LETTERS.push(i); }
+    for (var i = 0; i < 26; i++) { LETTERS.push(i); }
   })();
 
   function pickPair() {
