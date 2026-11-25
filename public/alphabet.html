@@ -534,7 +534,11 @@
   var best = 0;
   var pair = null; // { firstSide: "left" | "right", lo, hi }
   var pairShownAt = 0;
+  var pairOpen = false;
   var runAnswers = [];
+  var runId = "";
+  var answerIdx = 0;
+  var timeouts = 0;
   var deadline = 0;
   var qDeadline = 0;
   var rafId = 0;
@@ -549,16 +553,21 @@
   // level security policies allow (read scores, add a score).
   var SB_URL = "https://oojayxmgkhdnpjuhjfoo.supabase.co/rest/v1/alphabet_scores";
   var SB_ANSWERS_URL = "https://oojayxmgkhdnpjuhjfoo.supabase.co/rest/v1/alphabet_answers";
+  var SB_RUNS_URL = "https://oojayxmgkhdnpjuhjfoo.supabase.co/rest/v1/alphabet_runs";
   var SB_KEY = "sb_publishable_7SZ6Csdqh_WC3XpMJZQInw_jL41DfgT";
 
   // Anonymous per-browser id so the board can show each device's best run.
+  function newId() {
+    return (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : Date.now() + "-" + Math.random().toString(36).slice(2);
+  }
+
   var deviceId = "";
   try {
     deviceId = localStorage.getItem("alpha-device") || "";
     if (!deviceId) {
-      deviceId = (window.crypto && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : Date.now() + "-" + Math.random().toString(36).slice(2);
+      deviceId = newId();
       localStorage.setItem("alpha-device", deviceId);
     }
   } catch (e) {
@@ -600,7 +609,7 @@
     return fetch(SB_URL, {
       method: "POST",
       headers: sbHeaders({ Prefer: "return=representation" }),
-      body: JSON.stringify({ name: name, score: netScore(), accuracy: accuracy(), device_id: deviceId })
+      body: JSON.stringify({ name: name, score: netScore(), accuracy: accuracy(), device_id: deviceId, run_id: runId })
     }).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
@@ -690,6 +699,7 @@
       hi: letter(hi)
     };
     pairShownAt = performance.now();
+    pairOpen = true;
     letL.textContent = letter(firstOnLeft ? lo : hi);
     letR.textContent = letter(firstOnLeft ? hi : lo);
   }
@@ -723,23 +733,41 @@
 
   function qTimeout() {
     wrong += 1;
+    timeouts += 1;
     missEl.textContent = wrong;
     ptsEl.textContent = netScore();
-    logAnswer("timeout", false);
+    logAnswer("timeout", false, null);
     setDots("bad", "bad");
     nextPair();
   }
 
-  // One record per answered pair; the batch posts once when the run ends.
-  function logAnswer(picked, hit) {
+  // One record per shown pair; batches post when the run ends, and on
+  // pagehide for runs abandoned mid-game (keepalive survives unload).
+  function logAnswer(picked, hit, method) {
+    pairOpen = false;
     runAnswers.push({
+      run_id: runId,
+      idx: answerIdx++,
       lo: pair.lo,
       hi: pair.hi,
       first_side: pair.firstSide,
       picked: picked,
+      method: method,
       correct: hit,
-      ms: Math.min(Math.round(performance.now() - pairShownAt), 10000)
+      ms: Math.min(Math.round(performance.now() - pairShownAt), 10000),
+      t_left: Math.max(0, Math.round(deadline - performance.now()))
     });
+  }
+
+  function postRows(url, rows) {
+    try {
+      fetch(url, {
+        method: "POST",
+        headers: sbHeaders({ Prefer: "return=minimal" }),
+        body: JSON.stringify(rows),
+        keepalive: true
+      }).catch(function () { /* stats are best-effort */ });
+    } catch (e) { /* stats are best-effort */ }
   }
 
   function submitAnswers() {
@@ -749,20 +777,37 @@
       return a;
     });
     runAnswers = [];
-    try {
-      fetch(SB_ANSWERS_URL, {
-        method: "POST",
-        headers: sbHeaders({ Prefer: "return=minimal" }),
-        body: JSON.stringify(rows)
-      }).catch(function () { /* stats are best-effort */ });
-    } catch (e) { /* stats are best-effort */ }
+    postRows(SB_ANSWERS_URL, rows);
   }
+
+  function submitRun() {
+    postRows(SB_RUNS_URL, [{
+      run_id: runId,
+      device_id: deviceId,
+      score: netScore(),
+      right_count: correct,
+      wrong_count: wrong,
+      timeout_count: timeouts,
+      accuracy: accuracy(),
+      is_touch: isTouch,
+      viewport_w: window.innerWidth,
+      viewport_h: window.innerHeight,
+      lang: navigator.language || null,
+      referrer: document.referrer || null,
+      tz_offset: -new Date().getTimezoneOffset()
+    }]);
+  }
+
+  window.addEventListener("pagehide", submitAnswers);
 
   function start() {
     correct = 0;
     wrong = 0;
     savedThisRun = false;
     runAnswers = [];
+    runId = newId();
+    answerIdx = 0;
+    timeouts = 0;
     okEl.textContent = "0";
     missEl.textContent = "0";
     ptsEl.textContent = "0";
@@ -784,7 +829,7 @@
     qFill.style.transform = "scaleX(1)";
   }
 
-  function choose(side) {
+  function choose(side, method) {
     if (state !== "playing") return;
 
     var hit = side === pair.firstSide;
@@ -796,7 +841,7 @@
       missEl.textContent = wrong;
     }
     ptsEl.textContent = netScore();
-    logAnswer(side, hit);
+    logAnswer(side, hit, method || "key");
     var cls = hit ? "good" : "bad";
     setDots(side === "left" ? cls : "", side === "right" ? cls : "");
     nextPair();
@@ -813,7 +858,9 @@
     }
 
     track("Game Finish", { score: netScore(), right: correct, wrong: wrong, accuracy: accuracy() });
+    if (pairOpen && pair) { logAnswer("expired", false, null); }
     submitAnswers();
+    submitRun();
 
     finalScoreEl.textContent = netScore();
     finalRightEl.textContent = correct;
@@ -946,8 +993,8 @@
     overShownAt = performance.now();
   }
 
-  tileL.addEventListener("pointerdown", function (e) { e.preventDefault(); choose("left"); });
-  tileR.addEventListener("pointerdown", function (e) { e.preventDefault(); choose("right"); });
+  tileL.addEventListener("pointerdown", function (e) { e.preventDefault(); choose("left", "tap"); });
+  tileR.addEventListener("pointerdown", function (e) { e.preventDefault(); choose("right", "tap"); });
   startBtn.addEventListener("click", start);
   boardBtn.addEventListener("click", showBrowse);
   againBtn.addEventListener("click", start);
@@ -957,8 +1004,8 @@
     if (e.target === nameInput) return; // typing a name, not playing
     var k = e.key.toLowerCase();
     if (state === "playing") {
-      if (k === "q") choose("left");
-      else if (k === "e") choose("right");
+      if (k === "q") choose("left", "key");
+      else if (k === "e") choose("right", "key");
     } else {
       if (k === "q" || k === "e") {
         e.preventDefault();
