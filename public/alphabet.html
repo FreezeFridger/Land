@@ -54,9 +54,22 @@
 
   header {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
+    align-items: center;
+    gap: 14px;
+  }
+
+  header h1 { margin-right: auto; }
+
+  .tally {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    font-size: 13px;
+    line-height: 1.2;
+    color: var(--chrome);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
 
   h1 {
@@ -90,48 +103,6 @@
     color: var(--gold);
     font-weight: 600;
     font-size: 16px;
-  }
-
-  .mute {
-    appearance: none;
-    border: 0;
-    background: none;
-    cursor: pointer;
-    padding: 4px;
-    line-height: 0;
-    color: var(--chrome);
-    align-self: center;
-    display: inline-flex;
-  }
-
-  .mute:hover { color: var(--paper); }
-
-  .mute:focus-visible {
-    outline: 2px solid var(--gold);
-    border-radius: 6px;
-  }
-
-  .mute.is-muted .icon-on { display: none; }
-  .mute:not(.is-muted) .icon-off { display: none; }
-
-  .sound-row {
-    display: block;
-    margin: 14px auto 0;
-    background: none;
-    border: 0;
-    padding: 4px 8px;
-    color: var(--chrome);
-    font: 500 14px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-
-  .sound-row.off { color: var(--gold); }
-
-  .sound-row:focus-visible {
-    outline: 2px solid var(--gold);
-    border-radius: 6px;
   }
 
   .timer {
@@ -416,12 +387,10 @@
     <div class="hud">
       <span class="clock" id="clock">0:30</span>
       <span class="pts"><b id="ptsCount">0</b> pts</span>
+    </div>
+    <div class="tally" aria-hidden="false">
       <span><span class="ok" id="okCount">0</span> right</span>
       <span><span class="miss" id="missCount">0</span> wrong</span>
-      <button class="mute" id="muteBtn" aria-label="Mute sound" title="Mute sound (M)">
-        <svg class="icon-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-        <svg class="icon-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-      </button>
     </div>
   </header>
 
@@ -445,7 +414,6 @@
         <h2>Thirty seconds.<br>Two seconds a pair.</h2>
         <p class="lede">Pick the letter that comes earlier in the alphabet. Tap a tile, or press <kbd>Q</kbd> for left and <kbd>E</kbd> for right. Too slow on a pair counts as wrong. Your score is right minus wrong.</p>
         <button class="cta" id="startBtn">Start</button>
-        <button class="sound-row" id="soundRow" type="button"></button>
       </div>
 
       <div class="panel" id="panelOver" hidden>
@@ -497,7 +465,6 @@
   var okEl = document.getElementById("okCount");
   var missEl = document.getElementById("missCount");
   var ptsEl = document.getElementById("ptsCount");
-  var soundRow = document.getElementById("soundRow");
   var fill = document.getElementById("timerFill");
   var qFill = document.getElementById("qFill");
   var dotL = document.getElementById("dotLeft");
@@ -612,70 +579,6 @@
     try { window.plausible(name, props ? { props: props } : undefined); } catch (e) { /* analytics must never break the game */ }
   }
 
-  // --- Sound: tiny WebAudio blips; a blocked or failed context never breaks play.
-  var muteBtn = document.getElementById("muteBtn");
-  var audioCtx = null;
-  var muted = false;
-  try { muted = localStorage.getItem("alpha-muted") === "1"; } catch (e) { /* default on */ }
-
-  function renderMute() {
-    muteBtn.classList.toggle("is-muted", muted);
-    var label = (muted ? "Unmute" : "Mute") + " sound (M)";
-    muteBtn.setAttribute("aria-label", label);
-    muteBtn.title = label;
-    soundRow.classList.toggle("off", muted);
-    soundRow.textContent = muted ? "Sound is off — click to turn it on" : "Sound is on";
-  }
-
-  function toggleMute() {
-    muted = !muted;
-    try { localStorage.setItem("alpha-muted", muted ? "1" : "0"); } catch (e) { /* in-memory only */ }
-    renderMute();
-    // Unmuting confirms itself audibly, so the button doubles as a sound test.
-    // The short delay lets a freshly created context finish resuming first.
-    if (!muted) {
-      initAudio();
-      setTimeout(function () { beep(660, 0.12, "sine", 0.18); }, 100);
-    }
-  }
-
-  function initAudio() {
-    if (muted) return;
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === "suspended") audioCtx.resume();
-    } catch (e) { try { console.warn("[alphabet] audio:", e); } catch (e2) {} }
-  }
-
-  function beep(freq, dur, type, vol) {
-    if (muted) return;
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state !== "running") { audioCtx.resume(); return; }
-      var t = audioCtx.currentTime;
-      var osc = audioCtx.createOscillator();
-      var gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(vol, t);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(t);
-      osc.stop(t + dur);
-    } catch (e) { try { console.warn("[alphabet] audio:", e); } catch (e2) {} }
-  }
-
-  function playGood() { beep(880, 0.08, "sine", 0.15); }
-  function playBad() { beep(170, 0.15, "square", 0.12); }
-
-  muteBtn.addEventListener("click", function () { toggleMute(); muteBtn.blur(); });
-  soundRow.addEventListener("click", function () { toggleMute(); soundRow.blur(); });
-  // Belt and braces: wake the audio context on the first gesture of any kind.
-  window.addEventListener("pointerdown", initAudio, { once: true });
-  window.addEventListener("keydown", initAudio, { once: true });
-  renderMute();
-
   function letter(i) { return String.fromCharCode(65 + i); }
 
   function accuracy() {
@@ -754,7 +657,6 @@
     wrong += 1;
     missEl.textContent = wrong;
     ptsEl.textContent = netScore();
-    playBad();
     setDots("bad", "bad");
     nextPair();
   }
@@ -767,7 +669,6 @@
     missEl.textContent = "0";
     ptsEl.textContent = "0";
     overlay.hidden = true;
-    initAudio();
     setDots("", "");
     pickPair();
     state = "playing";
@@ -792,11 +693,9 @@
     if (hit) {
       correct += 1;
       okEl.textContent = correct;
-      playGood();
     } else {
       wrong += 1;
       missEl.textContent = wrong;
-      playBad();
     }
     ptsEl.textContent = netScore();
     var cls = hit ? "good" : "bad";
@@ -940,7 +839,6 @@
     if (e.repeat) return;
     if (e.target === nameInput) return; // typing a name, not playing
     var k = e.key.toLowerCase();
-    if (k === "m") { toggleMute(); return; }
     if (state === "playing") {
       if (k === "q") choose("left");
       else if (k === "e") choose("right");
